@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-fraunces: "Fraunces", serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+body {
+  @apply bg-stone-25 text-forest-900 font-body;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-stamp border border-forest-100 px-3 py-2 text-sm text-forest-800
+      focus:outline-none focus:ring-2 focus:ring-forest-300 bg-white;
+  }
+}
+
+/* Sello/insignia de verificación: motivo de "sello de mercado" que sirve
+   de elemento de firma visual en toda la plataforma. */
+.stamp-seal {
+  clip-path: polygon(
+    50% 0%, 61% 7%, 74% 2%, 80% 14%, 93% 15%, 94% 28%,
+    100% 38%, 92% 48%, 96% 60%, 86% 66%, 87% 79%, 74% 79%,
+    68% 91%, 55% 85%, 43% 92%, 34% 82%, 21% 84%, 18% 71%,
+    6% 66%, 12% 54%, 4% 44%, 14% 35%, 12% 22%, 25% 19%,
+    28% 6%, 40% 10%
+  );
+}

@@ -1,106 +1,369 @@
-// Tipos centrales de AgroLink, derivados de los Requerimientos Funcionales (RF)
-// del documento "Fase 1 — Análisis y Diseño".
-// Cuando el backend (NestJS + Prisma) esté disponible, estos tipos deben
-// mantenerse en sincronía con el schema.prisma real (Fase 2).
+// Tipos centrales de AgroLink, calcados 1:1 del schema.prisma real de la API
+// (API REST/prisma/schema.prisma). Mantener en sincronía con ese archivo.
+//
+// Nota sobre campos numéricos: los campos `Decimal` de Prisma (price,
+// totalAmount, unitPrice, subtotal, amount, commissionAmount,
+// commissionPercentage, latitude, longitude) se serializan como `string` en
+// JSON (comportamiento por defecto de decimal.js — la API no los convierte a
+// number). Hay que usar `Number(...)` antes de operar con ellos.
+//
+// Este archivo NO es usado por el catálogo mock (lib/mock/, componentes de
+// producto/reseñas): ese catálogo tiene sus propios tipos locales hasta que
+// se reconecte a la API real.
 
-export type UserRole = "COMPRADOR" | "VENDEDOR" | "ADMIN";
+// --------------------------------------------------------------------------
+// ENUMS
+// --------------------------------------------------------------------------
 
-// RF-05: estados de verificación del vendedor
-export type VerificationStatus =
-  | "PENDING"
-  | "UNDER_REVIEW"
-  | "VERIFIED"
-  | "REJECTED"
-  | "SUSPENDED";
+export type UserRole = "ADMIN" | "SELLER" | "CUSTOMER";
+
+export type VerificationStatus = "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | "SUSPENDED";
+
+export type ProductStatus = "ACTIVE" | "OUT_OF_STOCK" | "INACTIVE";
+
+export type ProductUnit = "UNIT" | "LB" | "KG" | "QQ" | "BOX" | "BAG" | "LITER";
+
+export type CartStatus = "ACTIVE" | "CONVERTED" | "ABANDONED";
+
+export type OrderStatus = "PENDING" | "CONFIRMED" | "PREPARING" | "DELIVERED" | "CANCELLED";
+
+export type ReviewModerationStatus = "APPROVED" | "PENDING_REVIEW" | "REJECTED";
+
+export type ReportTargetType = "PRODUCT" | "SELLER" | "REVIEW" | "PRODUCT_REVIEW" | "SELLER_REVIEW";
+
+export type ReportStatus = "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED";
+
+export type NotificationType =
+  | "NEW_ORDER"
+  | "ORDER_ACCEPTED"
+  | "ORDER_CANCELLED"
+  | "ORDER_PREPARING"
+  | "ORDER_DELIVERED"
+  | "SELLER_APPROVED"
+  | "SELLER_REJECTED"
+  | "SELLER_SUSPENDED"
+  | "NEW_REVIEW"
+  | "REPORT_RECEIVED"
+  | "PAYMENT_UPDATE";
+
+export type PaymentProvider = "PAYPAL" | "CREDIT_CARD" | "DEBIT_CARD" | "OTHER";
+
+export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+
+export type InventoryMovementType = "ENTRY" | "EXIT" | "ADJUSTMENT";
+
+// --------------------------------------------------------------------------
+// CATÁLOGOS GEOGRÁFICOS
+// --------------------------------------------------------------------------
+
+export interface Department {
+  id: string;
+  name: string;
+  code: string;
+  createdAt: string;
+}
+
+export interface Municipality {
+  id: string;
+  name: string;
+  code: string;
+  departmentId: string;
+  department?: Department;
+  createdAt: string;
+}
+
+export interface Location {
+  id: string;
+  userId: string;
+  departmentId: string;
+  department?: Department;
+  municipalityId: string;
+  municipality?: Municipality;
+  address: string;
+  latitude: string;
+  longitude: string;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --------------------------------------------------------------------------
+// USUARIOS E IDENTIDAD
+// --------------------------------------------------------------------------
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone: string | null;
+  avatarUrl: string | null;
   role: UserRole;
-  avatarUrl?: string;
+  isActive: boolean;
   createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  emailVerifiedAt: string | null;
 
-  // --- Perfil extendido / verificación (OPCIONAL para cualquier usuario) ---
-  // Importante: ningún dato de esta sección es obligatorio en el registro.
-  // Un usuario (comprador o vendedor) puede operar en la plataforma sin
-  // completar nada de esto. Si decide completarlo, obtiene `hasVerifiedBadge: true`
-  // una vez que el administrador aprueba la revisión.
-  identityDocumentNumber?: string; // número de identidad (opcional)
-  identityDocumentFrontUrl?: string; // foto DNI frontal (opcional)
-  identityDocumentBackUrl?: string; // foto DNI posterior (opcional)
-  livenessCheckUrl?: string; // "prueba de vida" (opcional)
-  profileCompletionStatus?: VerificationStatus; // solo aplica si decidió completar el perfil
-  hasVerifiedBadge: boolean; // insignia de verificación (derivada, no editable directamente)
+  sellerProfile?: SellerProfile;
+  locations?: Location[];
 }
 
-export interface Seller extends User {
-  role: "VENDEDOR";
-  businessName: string;
-  description?: string;
-  locationLat?: number;
-  locationLng?: number;
-  department?: string;
-  reputationAverage?: number; // promedio de reviews
-  reputationCount?: number;
-}
-
-export type ProductStatus = "ACTIVE" | "OUT_OF_STOCK" | "INACTIVE";
-
-export interface ProductImage {
+export interface SellerProfile {
   id: string;
-  url: string;
-  isCover: boolean;
+  userId: string;
+  user?: User;
+  businessName: string;
+  dni: string;
+  verificationStatus: VerificationStatus;
+  verifiedAt: string | null;
+  verifiedBy: string | null;
+  suspendedReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+
+  identityVerification?: IdentityVerification;
 }
 
-// RF-08: nombre, descripción, categoría, precio, unidad de medida, stock, imágenes, estado
+export interface IdentityVerification {
+  id: string;
+  sellerProfileId: string;
+  dniFrontUrl: string;
+  dniBackUrl: string;
+  selfieUrl: string;
+  lifeProofUrl: string;
+  status: VerificationStatus;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+// --------------------------------------------------------------------------
+// CATÁLOGO Y PRODUCTOS
+// --------------------------------------------------------------------------
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  parent?: Category;
+  children?: Category[];
+  isActive: boolean;
+}
+
 export interface Product {
   id: string;
   sellerId: string;
-  seller?: Pick<Seller, "id" | "businessName" | "hasVerifiedBadge" | "reputationAverage">;
+  seller?: SellerProfile;
+  categoryId: string;
+  category?: Category;
   name: string;
   description: string;
-  category: string;
-  price: number; // Lempiras (L.)
-  unit: "qq" | "lb" | "kg" | "unidad" | "caja";
+  price: string;
+  unit: ProductUnit;
   stock: number;
   status: ProductStatus;
-  images: ProductImage[]; // al menos permite 1 imagen de portada
-  department?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+
+  images?: ProductImage[];
+}
+
+export interface ProductImage {
+  id: string;
+  productId: string;
+  url: string;
+  order: number;
   createdAt: string;
 }
 
-// RF-18 / RF-19 / RF-20: reviews solo de compras completadas, calificación
-// multidimensional y moderación
-export type ReviewModerationStatus = "APPROVED" | "PENDING_REVIEW" | "REJECTED";
-
-export interface Review {
+export interface InventoryMovement {
   id: string;
   productId: string;
-  sellerId: string;
-  buyerId: string;
-  buyerName: string;
-  orderId: string; // referencia al pedido DELIVERED que habilita la reseña
-  ratingQuality: number; // calidad del producto (1-5)
-  ratingResponseTime: number; // tiempo de respuesta (1-5)
-  ratingFulfillment: number; // cumplimiento (1-5)
-  ratingService: number; // atención (1-5)
-  ratingTrust: number; // confianza (1-5)
-  comment: string;
-  status: ReviewModerationStatus;
+  type: InventoryMovementType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  reason: string | null;
+  createdBy: string;
   createdAt: string;
+}
+
+// --------------------------------------------------------------------------
+// CARRITO Y FAVORITOS
+// --------------------------------------------------------------------------
+
+export interface Cart {
+  id: string;
+  userId: string;
+  status: CartStatus;
+  createdAt: string;
+  updatedAt: string;
+  items?: CartItem[];
 }
 
 export interface CartItem {
+  id: string;
+  cartId: string;
   productId: string;
-  product: Product;
+  product?: Product;
   quantity: number;
+  createdAt: string;
 }
 
-export type PurchaseRequestStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "PREPARING"
-  | "DELIVERED"
-  | "CANCELLED";
+export interface Favorite {
+  id: string;
+  userId: string;
+  productId: string | null;
+  product?: Product;
+  sellerId: string | null;
+  seller?: SellerProfile;
+  createdAt: string;
+}
+
+// --------------------------------------------------------------------------
+// PEDIDOS
+// --------------------------------------------------------------------------
+
+export interface Order {
+  id: string;
+  buyerId: string;
+  buyer?: User;
+  sellerId: string;
+  seller?: SellerProfile;
+  status: OrderStatus;
+  totalAmount: string;
+  createdAt: string;
+  updatedAt: string;
+  confirmedAt: string | null;
+  deliveredAt: string | null;
+  cancelledAt: string | null;
+
+  items?: OrderItem[];
+  statusHistory?: OrderStatusHistory[];
+}
+
+export interface OrderStatusHistory {
+  id: string;
+  orderId: string;
+  fromStatus: OrderStatus | null;
+  toStatus: OrderStatus;
+  changedBy: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  product?: Product;
+  quantity: number;
+  unitPrice: string;
+  subtotal: string;
+}
+
+// --------------------------------------------------------------------------
+// REVIEWS Y REPUTACIÓN
+// --------------------------------------------------------------------------
+
+export interface ProductReview {
+  id: string;
+  orderId: string;
+  orderItemId: string;
+  productId: string;
+  buyerId: string;
+  buyer?: User;
+  rating: number;
+  comment: string | null;
+  moderationStatus: ReviewModerationStatus;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface SellerReview {
+  id: string;
+  orderId: string;
+  sellerId: string;
+  buyerId: string;
+  buyer?: User;
+  qualityScore: number;
+  responseTimeScore: number;
+  complianceScore: number;
+  attentionScore: number;
+  trustScore: number;
+  comment: string | null;
+  moderationStatus: ReviewModerationStatus;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+// --------------------------------------------------------------------------
+// REPORTES
+// --------------------------------------------------------------------------
+
+export interface Report {
+  id: string;
+  reporterId: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  reason: string;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+}
+
+// --------------------------------------------------------------------------
+// NOTIFICACIONES
+// --------------------------------------------------------------------------
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// --------------------------------------------------------------------------
+// PAGOS
+// --------------------------------------------------------------------------
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  provider: PaymentProvider;
+  isActive: boolean;
+  config: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  orderId: string;
+  paymentMethodId: string;
+  amount: string;
+  commissionAmount: string;
+  commissionPercentage: string;
+  status: TransactionStatus;
+  externalReference: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface CommissionConfig {
+  id: string;
+  percentage: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  isActive: boolean;
+  createdBy: string;
+}

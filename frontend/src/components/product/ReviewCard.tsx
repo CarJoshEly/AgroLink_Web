@@ -1,4 +1,4 @@
-import { Review } from "@/lib/types";
+import type { Review } from "@/lib/api/reviews";
 import StarRating from "@/components/ui/StarRating";
 
 export default function ReviewCard({ review }: { review: Review }) {

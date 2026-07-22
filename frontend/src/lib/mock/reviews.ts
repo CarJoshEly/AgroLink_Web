@@ -1,6 +1,23 @@
-import { Review } from "@/lib/types";
+// Tipo local del catálogo mock — ver nota en lib/mock/products.ts.
 
-export const mockReviews: Review[] = [
+export interface MockReview {
+  id: string;
+  productId: string;
+  sellerId: string;
+  buyerId: string;
+  buyerName: string;
+  orderId: string;
+  ratingQuality: number;
+  ratingResponseTime: number;
+  ratingFulfillment: number;
+  ratingService: number;
+  ratingTrust: number;
+  comment: string;
+  status: "APPROVED" | "PENDING_REVIEW" | "REJECTED";
+  createdAt: string;
+}
+
+export const mockReviews: MockReview[] = [
   {
     id: "r1",
     productId: "p1",
@@ -35,7 +52,7 @@ export const mockReviews: Review[] = [
   },
 ];
 
-export function getReviewsByProductId(productId: string): Review[] {
+export function getReviewsByProductId(productId: string): MockReview[] {
   return mockReviews.filter(
     (r) => r.productId === productId && r.status === "APPROVED"
   );

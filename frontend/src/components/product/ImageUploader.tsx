@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { ImagePlus, X, Star } from "lucide-react";
 import { uploadProductImage } from "@/lib/api/products";
-import { ProductImage } from "@/lib/types";
+import type { ProductImage } from "@/lib/api/products";
 
 interface ImageUploaderProps {
   productId: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Review } from "@/lib/types";
+import type { Review } from "@/lib/api/reviews";
 import { fetchReviewsByProduct } from "@/lib/api/reviews";
 import ReviewCard from "./ReviewCard";
 import ReviewForm from "./ReviewForm";

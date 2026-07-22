@@ -1,6 +1,10 @@
-import { Review } from "@/lib/types";
+import type { MockReview } from "@/lib/mock/reviews";
 import { getReviewsByProductId as getMockReviewsByProductId } from "@/lib/mock/reviews";
 // import { apiFetch } from "./client";
+
+// Ver nota en lib/api/products.ts: el catálogo mock está aislado de
+// `@/lib/types` hasta reconectarse a la API real.
+export type Review = MockReview;
 
 export async function fetchReviewsByProduct(productId: string): Promise<Review[]> {
   // --- MOCK (activo hoy) ---

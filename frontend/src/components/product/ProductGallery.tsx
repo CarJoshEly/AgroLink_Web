@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ProductImage } from "@/lib/types";
+import type { ProductImage } from "@/lib/api/products";
 
 export default function ProductGallery({ images }: { images: ProductImage[] }) {
   const sorted = [...images].sort((a, b) => Number(b.isCover) - Number(a.isCover));

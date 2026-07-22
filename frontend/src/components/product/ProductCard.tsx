@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Product } from "@/lib/types";
+import type { Product } from "@/lib/api/products";
 import VerificationBadge from "@/components/ui/VerificationBadge";
 
 export default function ProductCard({ product }: { product: Product }) {

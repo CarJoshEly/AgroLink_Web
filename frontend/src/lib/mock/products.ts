@@ -1,6 +1,38 @@
-import { Product } from "@/lib/types";
+// Tipos locales del catálogo mock — deliberadamente aislados de
+// `@/lib/types` (que ahora es fiel al schema.prisma real). Este catálogo
+// se reconecta a la API real, con su forma de datos real, en el sprint que
+// lo reconstruya.
 
-export const mockProducts: Product[] = [
+export interface MockProductImage {
+  id: string;
+  url: string;
+  isCover: boolean;
+}
+
+export interface MockProductSeller {
+  id: string;
+  businessName: string;
+  hasVerifiedBadge: boolean;
+  reputationAverage?: number;
+}
+
+export interface MockProduct {
+  id: string;
+  sellerId: string;
+  seller?: MockProductSeller;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  unit: "qq" | "lb" | "kg" | "unidad" | "caja";
+  stock: number;
+  status: "ACTIVE" | "OUT_OF_STOCK" | "INACTIVE";
+  images: MockProductImage[];
+  department?: string;
+  createdAt: string;
+}
+
+export const mockProducts: MockProduct[] = [
   {
     id: "p1",
     sellerId: "s1",
@@ -51,6 +83,6 @@ export const mockProducts: Product[] = [
   },
 ];
 
-export function getProductById(id: string): Product | undefined {
+export function getProductById(id: string): MockProduct | undefined {
   return mockProducts.find((p) => p.id === id);
 }

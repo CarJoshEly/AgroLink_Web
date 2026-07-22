@@ -1,25 +1,22 @@
-# AgroLink Honduras
+# AgroLink Honduras — Web
 
-Marketplace agrícola hondureño. Este repo sigue la estructura prevista en el
-documento **"Fase 1 — Análisis y Diseño"**: frontend Web en Next.js
-consumiendo una única API REST (NestJS), que hoy todavía no existe.
+Este repositorio contiene **solo el frontend** (Next.js) del marketplace
+agrícola AgroLink Honduras. La API REST (NestJS + Prisma + PostgreSQL) vive
+en su propio repositorio independiente y se consume por HTTP — este repo no
+la contiene ni la ejecuta.
+
+`frontend/` es la raíz efectiva de trabajo: todo el código, dependencias y
+scripts viven ahí dentro. Se mantiene como subdirectorio (en vez de
+aplanarse a la raíz del repo) para no arriesgar el historial de git con un
+movimiento masivo de archivos; en la práctica, cualquier tarea de
+desarrollo (`npm install`, `npm run dev`, etc.) se ejecuta dentro de
+`frontend/`.
 
 ```
-agrolink/
-  frontend/   Aplicación web (lista para correr, con datos mock)
-  backend/    Vacío — se llena en la Fase 3 (NestJS + Prisma + PostgreSQL)
+AgroLink_WEB/
+  frontend/   Aplicación web Next.js (raíz efectiva del proyecto)
 ```
 
-## Cómo está pensado el flujo de trabajo
-
-1. **Hoy**: trabajas y pruebas todo en `frontend/`, con datos simulados.
-2. **Cuando tengas la API** (propia o externa): defines `NEXT_PUBLIC_API_URL`
-   en `frontend/.env.local` y activas las llamadas reales ya dejadas listas
-   (comentadas) en `frontend/src/lib/api/`.
-3. **Backend**: cuando empieces la Fase 3, todo va dentro de `backend/`
-   (ver `backend/README.md` para el detalle de lo que debe contener según
-   el documento de análisis).
-
-Ver `frontend/README.md` para instrucciones de arranque y detalle de las
-funcionalidades ya implementadas (imagen de producto, pestaña de reseñas,
-registro con verificación de identidad opcional + insignia).
+Ver [`frontend/README.md`](frontend/README.md) para instrucciones de
+arranque, variables de entorno, y el detalle de cómo se conecta a la API
+real.

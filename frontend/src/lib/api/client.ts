@@ -111,6 +111,54 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   return envelope.data;
 }
 
+/**
+ * Variante de `apiFetch` para `multipart/form-data` (subida de archivos).
+ * No fija `Content-Type`: el navegador debe generarlo con el boundary
+ * correcto a partir del `FormData`.
+ */
+export async function apiFetchForm<T>(
+  path: string,
+  options: Omit<ApiFetchOptions, "body"> & { body: FormData }
+): Promise<T> {
+  if (!API_BASE_URL) {
+    throw new Error(
+      "NEXT_PUBLIC_API_URL no está configurada. Define la URL completa de la API (incluyendo /api/v1) en .env.local."
+    );
+  }
+
+  const { authToken, headers, _isRetry, body, ...rest } = options;
+  const token = authToken ?? getAccessToken() ?? undefined;
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...rest,
+    body,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+  });
+
+  if (response.status === 401 && !_isRetry) {
+    const refreshed = await tryRefreshAccessToken();
+    if (refreshed) {
+      return apiFetchForm<T>(path, { ...options, authToken: refreshed, _isRetry: true });
+    }
+    handleSessionExpired();
+    const errBody = await parseErrorBody(response);
+    throw new ApiError(errBody, response.status);
+  }
+
+  if (!response.ok) {
+    const errBody = await parseErrorBody(response);
+    throw new ApiError(errBody, response.status);
+  }
+
+  if (response.status === 204) return undefined as T;
+
+  const envelope = (await response.json()) as ApiEnvelope<T>;
+  return envelope.data;
+}
+
 /** Intenta renovar el access token con el refresh token guardado. Devuelve el nuevo token, o null si no fue posible. */
 async function tryRefreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();

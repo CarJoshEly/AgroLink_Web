@@ -9,9 +9,11 @@ export interface AuthContextValue {
   user: User | null;
   accessToken: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
+  logoutAllSessions: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
+  setUser: (user: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -38,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await authApi.login({ email, password });
       applyTokens(result);
       setUser(result.user);
+      return result.user;
     },
     [applyTokens]
   );
@@ -47,6 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (refreshToken) {
       await authApi.logout(refreshToken).catch(() => undefined);
     }
+    clearAuthState();
+  }, [clearAuthState]);
+
+  const logoutAllSessions = useCallback(async () => {
+    await authApi.logoutAll().catch(() => undefined);
     clearAuthState();
   }, [clearAuthState]);
 
@@ -93,8 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, accessToken, isLoading, login, logout, refreshSession }),
-    [user, accessToken, isLoading, login, logout, refreshSession]
+    () => ({ user, accessToken, isLoading, login, logout, logoutAllSessions, refreshSession, setUser }),
+    [user, accessToken, isLoading, login, logout, logoutAllSessions, refreshSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

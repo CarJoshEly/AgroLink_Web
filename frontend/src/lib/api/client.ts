@@ -84,6 +84,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   const token = authToken ?? getAccessToken() ?? undefined;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    cache: "no-store",
     ...rest,
     headers: {
       "Content-Type": "application/json",
@@ -132,6 +133,7 @@ export async function apiFetchPaginated<T>(
   const token = authToken ?? getAccessToken() ?? undefined;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    cache: "no-store",
     ...rest,
     headers: {
       "Content-Type": "application/json",
@@ -178,6 +180,7 @@ export async function apiFetchForm<T>(
   const token = authToken ?? getAccessToken() ?? undefined;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    cache: "no-store",
     ...rest,
     body,
     headers: {
@@ -215,6 +218,7 @@ async function tryRefreshAccessToken(): Promise<string | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });

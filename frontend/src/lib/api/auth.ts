@@ -98,8 +98,14 @@ export async function logoutAll(): Promise<{ message: string }> {
   return apiFetch<{ message: string }>("/auth/logout-all", { method: "POST" });
 }
 
+/**
+ * OJO: usa /users/me (no /auth/me). /auth/me devuelve el usuario "pelado",
+ * sin `sellerProfile` ni `locations` — y el resto de la app (redirect de
+ * login, badge de verificación, guard de /vendedor) depende de
+ * `user.sellerProfile.verificationStatus`. Confirmado en users.service.ts.
+ */
 export async function me(accessToken?: string): Promise<User> {
-  return apiFetch<User>("/auth/me", { authToken: accessToken });
+  return apiFetch<User>("/users/me", { authToken: accessToken });
 }
 
 // --------------------------------------------------------------------------

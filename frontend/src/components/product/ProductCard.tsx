@@ -1,9 +1,11 @@
 import Link from "next/link";
-import type { Product } from "@/lib/api/products";
+import type { Product } from "@/lib/types";
 import VerificationBadge from "@/components/ui/VerificationBadge";
+import { PRODUCT_UNIT_LABELS } from "@/lib/labels";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const cover = product.images.find((i) => i.isCover) ?? product.images[0];
+  const cover = [...(product.images ?? [])].sort((a, b) => a.order - b.order)[0];
+  const isVerified = product.seller?.verificationStatus === "VERIFIED";
 
   return (
     <Link
@@ -25,15 +27,23 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="p-4">
-        <p className="text-xs uppercase tracking-wide text-soil-400 mb-1">{product.category}</p>
+        <p className="text-xs uppercase tracking-wide text-soil-400 mb-1">
+          {product.category?.name ?? "—"}
+        </p>
         <h3 className="font-display text-base text-forest-800 leading-snug">{product.name}</h3>
         <p className="text-forest-700 font-medium mt-1">
-          L. {product.price.toLocaleString("es-HN")} <span className="text-xs text-soil-400">/ {product.unit}</span>
+          L. {Number(product.price).toLocaleString("es-HN")}{" "}
+          <span className="text-xs text-soil-400">/ {PRODUCT_UNIT_LABELS[product.unit]}</span>
         </p>
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs text-soil-500">{product.seller?.businessName}</span>
-          <VerificationBadge verified={Boolean(product.seller?.hasVerifiedBadge)} />
+          <VerificationBadge verified={isVerified} />
         </div>
+        {product.status === "OUT_OF_STOCK" && (
+          <span className="inline-block mt-2 text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-stamp">
+            Agotado
+          </span>
+        )}
       </div>
     </Link>
   );

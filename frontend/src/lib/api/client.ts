@@ -18,6 +18,8 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 }
 
 export interface ApiEnvelope<T> {
@@ -109,6 +111,52 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   const envelope = (await response.json()) as ApiEnvelope<T>;
   return envelope.data;
+}
+
+/**
+ * Igual que `apiFetch`, pero conserva el `meta` de paginación del envelope
+ * (apiFetch normal lo descarta y solo devuelve `data`). Úsala para listados
+ * paginados como /products o /reviews/*.
+ */
+export async function apiFetchPaginated<T>(
+  path: string,
+  options: ApiFetchOptions = {}
+): Promise<{ data: T; meta: PaginationMeta | undefined }> {
+  if (!API_BASE_URL) {
+    throw new Error(
+      "NEXT_PUBLIC_API_URL no está configurada. Define la URL completa de la API (incluyendo /api/v1) en .env.local."
+    );
+  }
+
+  const { authToken, headers, _isRetry, ...rest } = options;
+  const token = authToken ?? getAccessToken() ?? undefined;
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...rest,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+  });
+
+  if (response.status === 401 && !_isRetry) {
+    const refreshed = await tryRefreshAccessToken();
+    if (refreshed) {
+      return apiFetchPaginated<T>(path, { ...options, authToken: refreshed, _isRetry: true });
+    }
+    handleSessionExpired();
+    const body = await parseErrorBody(response);
+    throw new ApiError(body, response.status);
+  }
+
+  if (!response.ok) {
+    const body = await parseErrorBody(response);
+    throw new ApiError(body, response.status);
+  }
+
+  const envelope = (await response.json()) as ApiEnvelope<T>;
+  return { data: envelope.data, meta: envelope.meta };
 }
 
 /**

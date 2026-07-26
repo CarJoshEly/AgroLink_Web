@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
@@ -31,7 +31,11 @@ const schema = z.object({
   longitude: z.coerce.number({ message: "Ingresa un número válido" }).min(-180).max(180),
 });
 
-type FormValues = z.infer<typeof schema>;
+// z.coerce.number() tiene tipo de entrada distinto al de salida (unknown -> number),
+// así que el formulario debe tiparse con la entrada "cruda" y el resolver transformarla
+// a la salida validada. Ver: https://github.com/react-hook-form/resolvers#zod
+type FormInput = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 function formatDni(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 13);
@@ -57,7 +61,7 @@ export default function RegisterSellerForm() {
     setValue,
     resetField,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(schema) });
 
   const departmentId = watch("departmentId");
 
@@ -80,7 +84,7 @@ export default function RegisterSellerForm() {
       .finally(() => setLoadingMunicipalities(false));
   }, [departmentId, resetField]);
 
-  async function onSubmit(values: FormValues) {
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setFormError(null);
     try {
       const result = await registerSeller(values);
@@ -91,7 +95,7 @@ export default function RegisterSellerForm() {
     } catch (err) {
       setFormError(err instanceof ApiError ? err.rawMessage.join(" ") : "No se pudo crear la cuenta.");
     }
-  }
+  };
 
   if (done) {
     return (

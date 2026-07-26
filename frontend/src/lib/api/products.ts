@@ -1,44 +1,43 @@
-import type { MockProduct, MockProductImage } from "@/lib/mock/products";
-import { mockProducts, getProductById as getMockProductById } from "@/lib/mock/products";
-// import { apiFetch } from "./client";
+import { apiFetch, apiFetchPaginated, type PaginationMeta } from "./client";
+import type { Product } from "@/lib/types";
 
-// El catálogo mock vive aislado de `@/lib/types` (que es fiel al schema.prisma
-// real) hasta que este módulo se reconecte a la API real. Se re-exportan los
-// tipos del mock bajo estos nombres para que los componentes de catálogo
-// puedan seguir importando "Product"/"ProductImage" desde aquí.
-export type Product = MockProduct;
-export type ProductImage = MockProductImage;
+export type { Product };
 
-export async function fetchProducts(): Promise<Product[]> {
-  // --- MOCK (activo hoy) ---
-  return Promise.resolve(mockProducts);
-
-  // --- API REAL (cuando el backend/API externa exista) ---
-  // return apiFetch<Product[]>("/api/products");
+export interface ProductFilters {
+  search?: string;
+  categoryId?: string;
+  sellerId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  /** Coincide con ListProductsQueryDto: solo price | createdAt | name */
+  sortBy?: "price" | "createdAt" | "name";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  limit?: number;
 }
 
-export async function fetchProductById(id: string): Promise<Product | undefined> {
-  // --- MOCK (activo hoy) ---
-  return Promise.resolve(getMockProductById(id));
-
-  // --- API REAL ---
-  // return apiFetch<Product>(`/api/products/${id}`);
+function buildQuery(filters: ProductFilters): string {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("search", filters.search);
+  if (filters.categoryId) params.set("categoryId", filters.categoryId);
+  if (filters.sellerId) params.set("sellerId", filters.sellerId);
+  if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
+  if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
+  params.set("sortBy", filters.sortBy ?? "createdAt");
+  params.set("sortOrder", filters.sortOrder ?? "desc");
+  params.set("page", String(filters.page ?? 1));
+  params.set("limit", String(filters.limit ?? 12));
+  return params.toString();
 }
 
-export async function uploadProductImage(
-  productId: string,
-  file: File
-): Promise<{ url: string }> {
-  // --- MOCK (activo hoy): genera una URL local para previsualizar ---
-  const url = URL.createObjectURL(file);
-  return Promise.resolve({ url });
+/** GET /products — marketplace público (siempre ACTIVE + vendedor verificado, filtrado en el backend). */
+export async function fetchProducts(
+  filters: ProductFilters = {}
+): Promise<{ products: Product[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<Product[]>(`/products?${buildQuery(filters)}`);
+  return { products: data, meta };
+}
 
-  // --- API REAL (Supabase Storage vía backend) ---
-  // const formData = new FormData();
-  // formData.append("file", file);
-  // return apiFetch<{ url: string }>(`/api/products/${productId}/images`, {
-  //   method: "POST",
-  //   body: formData,
-  //   headers: {}, // dejar que el navegador setee el boundary de multipart
-  // });
+export async function fetchProductById(id: string): Promise<Product> {
+  return apiFetch<Product>(`/products/${id}`);
 }

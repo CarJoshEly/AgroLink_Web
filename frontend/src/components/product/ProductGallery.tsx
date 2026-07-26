@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { ProductImage } from "@/lib/api/products";
+import type { ProductImage } from "@/lib/types";
 
 export default function ProductGallery({ images }: { images: ProductImage[] }) {
-  const sorted = [...images].sort((a, b) => Number(b.isCover) - Number(a.isCover));
+  const sorted = [...images].sort((a, b) => a.order - b.order);
   const [active, setActive] = useState(sorted[0]?.id);
   const activeImage = sorted.find((img) => img.id === active) ?? sorted[0];
 

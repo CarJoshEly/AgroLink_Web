@@ -1,40 +1,51 @@
-import type { MockReview } from "@/lib/mock/reviews";
-import { getReviewsByProductId as getMockReviewsByProductId } from "@/lib/mock/reviews";
-// import { apiFetch } from "./client";
+import { apiFetch, apiFetchPaginated, type PaginationMeta } from "./client";
+import type { ProductReview, SellerReview } from "@/lib/types";
 
-// Ver nota en lib/api/products.ts: el catálogo mock está aislado de
-// `@/lib/types` hasta reconectarse a la API real.
-export type Review = MockReview;
-
-export async function fetchReviewsByProduct(productId: string): Promise<Review[]> {
-  // --- MOCK (activo hoy) ---
-  return Promise.resolve(getMockReviewsByProductId(productId));
-
-  // --- API REAL ---
-  // return apiFetch<Review[]>(`/api/products/${productId}/reviews`);
-}
-
-export interface NewReviewInput {
+/** Shape real de reviews.service.ts#getProductSummary (producto usa `rating` simple, no 5 scores). */
+export interface ProductReviewSummary {
   productId: string;
-  orderId: string;
-  ratingQuality: number;
-  ratingResponseTime: number;
-  ratingFulfillment: number;
-  ratingService: number;
-  ratingTrust: number;
-  comment: string;
+  averageRating: number | null;
+  totalReviews: number;
 }
 
-export async function submitReview(input: NewReviewInput): Promise<{ ok: true }> {
-  // --- MOCK (activo hoy) ---
-  console.info("[mock] Reseña enviada, quedará en PENDING_REVIEW:", input);
-  return Promise.resolve({ ok: true });
+/** Shape real de reviews.service.ts#getSellerSummary. */
+export interface SellerReviewSummary {
+  sellerId: string;
+  averageQuality: number | null;
+  averageResponseTime: number | null;
+  averageCompliance: number | null;
+  averageAttention: number | null;
+  averageTrust: number | null;
+  averageOverall: number | null;
+  totalReviews: number;
+}
 
-  // --- API REAL ---
-  // RF-18/RF-20: el backend valida que el pedido esté DELIVERED y crea la
-  // reseña con status PENDING_REVIEW hasta ser moderada.
-  // return apiFetch<{ ok: true }>("/api/reviews", {
-  //   method: "POST",
-  //   body: JSON.stringify(input),
-  // });
+export async function fetchProductReviews(
+  productId: string,
+  page = 1,
+  limit = 10
+): Promise<{ reviews: ProductReview[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<ProductReview[]>(
+    `/reviews/products?productId=${productId}&page=${page}&limit=${limit}`
+  );
+  return { reviews: data, meta };
+}
+
+export async function fetchProductReviewSummary(productId: string): Promise<ProductReviewSummary> {
+  return apiFetch<ProductReviewSummary>(`/reviews/products/${productId}/summary`);
+}
+
+export async function fetchSellerReviews(
+  sellerId: string,
+  page = 1,
+  limit = 10
+): Promise<{ reviews: SellerReview[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<SellerReview[]>(
+    `/reviews/sellers?sellerId=${sellerId}&page=${page}&limit=${limit}`
+  );
+  return { reviews: data, meta };
+}
+
+export async function fetchSellerReviewSummary(sellerId: string): Promise<SellerReviewSummary> {
+  return apiFetch<SellerReviewSummary>(`/reviews/sellers/${sellerId}/summary`);
 }

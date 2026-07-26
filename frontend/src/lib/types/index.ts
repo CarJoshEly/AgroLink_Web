@@ -153,10 +153,13 @@ export interface Category {
   isActive: boolean;
 }
 
+/** Lo único que el backend expone públicamente del vendedor dentro de un producto (PUBLIC_SELLER_SELECT). */
+export type PublicSeller = Pick<SellerProfile, "id" | "businessName" | "verificationStatus">;
+
 export interface Product {
   id: string;
   sellerId: string;
-  seller?: SellerProfile;
+  seller?: PublicSeller;
   categoryId: string;
   category?: Category;
   name: string;

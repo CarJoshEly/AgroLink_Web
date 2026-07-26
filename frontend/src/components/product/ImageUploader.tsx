@@ -2,33 +2,43 @@
 
 import { useRef, useState } from "react";
 import { ImagePlus, X, Star } from "lucide-react";
-import { uploadProductImage } from "@/lib/api/products";
-import type { ProductImage } from "@/lib/api/products";
+
+/**
+ * Imagen "de trabajo" mientras se arma el formulario de publicación de
+ * producto (Sprint 4). No es el `ProductImage` real de `lib/types`: la API
+ * no tiene `isCover`, usa `order: number` (ver ProductGallery.tsx). Cuando
+ * se conecte, este componente debe llamar a
+ * `POST /products/:id/images` (multipart, campo "files", hasta 5) —
+ * confirmado en products.controller.ts — y mapear el resultado real.
+ */
+export interface DraftProductImage {
+  id: string;
+  url: string;
+  isCover: boolean;
+}
+
+/** Mock temporal: genera un object URL local en vez de subir a Supabase Storage. */
+async function uploadProductImageMock(_productId: string, file: File): Promise<{ url: string }> {
+  return { url: URL.createObjectURL(file) };
+}
 
 interface ImageUploaderProps {
   productId: string;
-  initialImages?: ProductImage[];
-  onChange?: (images: ProductImage[]) => void;
+  initialImages?: DraftProductImage[];
+  onChange?: (images: DraftProductImage[]) => void;
   maxImages?: number;
 }
-
-/**
- * Permite agregar una (o varias) imagen del producto, marcar la portada y
- * eliminar imágenes ya cargadas. Hoy sube a un object URL local (mock);
- * cuando exista el backend, uploadProductImage() se conecta a Supabase
- * Storage vía la API (ver lib/api/products.ts).
- */
 export default function ImageUploader({
   productId,
   initialImages = [],
   onChange,
   maxImages = 6,
 }: ImageUploaderProps) {
-  const [images, setImages] = useState<ProductImage[]>(initialImages);
+  const [images, setImages] = useState<DraftProductImage[]>(initialImages);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function emit(next: ProductImage[]) {
+  function emit(next: DraftProductImage[]) {
     setImages(next);
     onChange?.(next);
   }
@@ -38,10 +48,10 @@ export default function ImageUploader({
     setUploading(true);
     try {
       const files = Array.from(fileList).slice(0, maxImages - images.length);
-      const uploaded: ProductImage[] = [];
+      const uploaded: DraftProductImage[] = [];
 
       for (const file of files) {
-        const { url } = await uploadProductImage(productId, file);
+        const { url } = await uploadProductImageMock(productId, file);
         uploaded.push({
           id: `${Date.now()}-${file.name}`,
           url,

@@ -1,5 +1,5 @@
-import { apiFetch, apiFetchPaginated, type PaginationMeta } from "./client";
-import type { Product } from "@/lib/types";
+import { apiFetch, apiFetchForm, apiFetchPaginated, type PaginationMeta } from "./client";
+import type { Product, ProductUnit, ProductStatus, ProductImage as ProductImageDto } from "@/lib/types";
 
 export type { Product };
 
@@ -64,4 +64,41 @@ export async function updateProductStock(id: string, stock: number): Promise<Pro
 /** DELETE /products/:id — soft delete en el backend. */
 export async function deleteProduct(id: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/products/${id}`, { method: "DELETE" });
+}
+
+/** Coincide con CreateProductDto: name (min 3), description (min 10), price >= 0, stock entero >= 0. */
+export interface CreateProductInput {
+  categoryId: string;
+  name: string;
+  description: string;
+  price: number;
+  unit: ProductUnit;
+  stock: number;
+}
+
+export type UpdateProductInput = Partial<CreateProductInput> & { status?: ProductStatus };
+
+/** POST /products — requiere sellerProfile VERIFIED (si no, la API responde 403). */
+export async function createProduct(dto: CreateProductInput): Promise<Product> {
+  return apiFetch<Product>("/products", { method: "POST", body: JSON.stringify(dto) });
+}
+
+/** PATCH /products/:id */
+export async function updateProduct(id: string, dto: UpdateProductInput): Promise<Product> {
+  return apiFetch<Product>(`/products/${id}`, { method: "PATCH", body: JSON.stringify(dto) });
+}
+
+/**
+ * POST /products/:id/images — multipart, campo "files" (hasta 5 por llamada).
+ * Solo jpeg/png/webp, máx 5MB por archivo (validado también en el backend).
+ */
+export async function addProductImages(id: string, files: File[]): Promise<ProductImageDto[]> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+  return apiFetchForm<ProductImageDto[]>(`/products/${id}/images`, { method: "POST", body: formData });
+}
+
+/** DELETE /products/:id/images/:imageId */
+export async function removeProductImage(id: string, imageId: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/products/${id}/images/${imageId}`, { method: "DELETE" });
 }

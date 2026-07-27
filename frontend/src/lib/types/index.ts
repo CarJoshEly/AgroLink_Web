@@ -255,6 +255,7 @@ export interface OrderStatusHistory {
   fromStatus: OrderStatus | null;
   toStatus: OrderStatus;
   changedBy: string;
+  user?: Pick<User, "id" | "name" | "role">;
   note: string | null;
   createdAt: string;
 }

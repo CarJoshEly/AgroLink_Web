@@ -1,6 +1,19 @@
 import { apiFetch, apiFetchPaginated, type PaginationMeta } from "./client";
 import type { Order, OrderStatus, OrderStatusHistory } from "@/lib/types";
 
+export interface OrdersDashboard {
+  totalOrders: number;
+  byStatus: Record<OrderStatus, number>;
+  pendingCount: number;
+  totalRevenue: number;
+  recentOrders: Order[];
+}
+
+/** GET /orders/dashboard — requiere sesión SELLER. */
+export async function fetchOrdersDashboard(): Promise<OrdersDashboard> {
+  return apiFetch<OrdersDashboard>("/orders/dashboard");
+}
+
 export interface OrderFilters {
   status?: OrderStatus;
   dateFrom?: string;

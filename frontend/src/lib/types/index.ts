@@ -361,6 +361,14 @@ export interface Transaction {
   externalReference: string | null;
   createdAt: string;
   completedAt: string | null;
+  /** Incluido por TRANSACTION_INCLUDE en transactions.service.ts. */
+  order?: {
+    id: string;
+    totalAmount: string;
+    buyerId: string;
+    seller: { id: string; businessName: string; userId: string };
+  };
+  paymentMethod?: Pick<PaymentMethod, "id" | "name" | "provider">;
 }
 
 export interface CommissionConfig {

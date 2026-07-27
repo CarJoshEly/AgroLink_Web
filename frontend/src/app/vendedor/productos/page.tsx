@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Eye } from "lucide-react";
+import { Pencil, Trash2, Eye, Boxes } from "lucide-react";
 import { fetchMyProducts, updateProductStock, deleteProduct, type ProductFilters } from "@/lib/api/products";
 import { PRODUCT_STATUS_LABELS, PRODUCT_UNIT_LABELS } from "@/lib/labels";
 import type { Product, ProductStatus } from "@/lib/types";
@@ -199,6 +199,13 @@ export default function SellerProductsPage() {
                       <div className="flex items-center justify-end gap-3">
                         <Link href={`/productos/${product.id}`} title="Ver" className="text-soil-400 hover:text-forest-700">
                           <Eye size={16} />
+                        </Link>
+                        <Link
+                          href={`/vendedor/inventario/${product.id}`}
+                          title="Inventario"
+                          className="text-soil-400 hover:text-forest-700"
+                        >
+                          <Boxes size={16} />
                         </Link>
                         <Link
                           href={`/vendedor/productos/${product.id}/editar`}

@@ -1,5 +1,11 @@
 import { apiFetch, apiFetchForm, apiFetchPaginated, type PaginationMeta } from "./client";
-import type { Product, ProductUnit, ProductStatus, ProductImage as ProductImageDto } from "@/lib/types";
+import type {
+  Product,
+  ProductUnit,
+  ProductStatus,
+  ProductImage as ProductImageDto,
+  InventoryMovement,
+} from "@/lib/types";
 
 export type { Product };
 
@@ -101,4 +107,41 @@ export async function addProductImages(id: string, files: File[]): Promise<Produ
 /** DELETE /products/:id/images/:imageId */
 export async function removeProductImage(id: string, imageId: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/products/${id}/images/${imageId}`, { method: "DELETE" });
+}
+
+// --------------------------------------------------------------------------
+// Inventario (POST /products/:productId/inventory/entries|exits, GET .../history)
+// --------------------------------------------------------------------------
+
+export async function registerInventoryEntry(
+  productId: string,
+  quantity: number,
+  reason?: string
+): Promise<InventoryMovement> {
+  return apiFetch<InventoryMovement>(`/products/${productId}/inventory/entries`, {
+    method: "POST",
+    body: JSON.stringify({ quantity, reason }),
+  });
+}
+
+export async function registerInventoryExit(
+  productId: string,
+  quantity: number,
+  reason?: string
+): Promise<InventoryMovement> {
+  return apiFetch<InventoryMovement>(`/products/${productId}/inventory/exits`, {
+    method: "POST",
+    body: JSON.stringify({ quantity, reason }),
+  });
+}
+
+export async function fetchInventoryHistory(
+  productId: string,
+  page = 1,
+  limit = 15
+): Promise<{ movements: InventoryMovement[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<InventoryMovement[]>(
+    `/products/${productId}/inventory/history?page=${page}&limit=${limit}`
+  );
+  return { movements: data, meta };
 }

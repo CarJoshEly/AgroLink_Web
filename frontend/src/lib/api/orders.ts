@@ -40,6 +40,17 @@ export async function fetchReceivedOrders(
   return { orders: data, meta };
 }
 
+/** Filtros para GET /orders/mine — requiere sesión CUSTOMER. */
+export type ListMyOrdersParams = OrderFilters;
+
+/** GET /orders/mine — requiere sesión CUSTOMER. */
+export async function fetchMyOrders(
+  params: ListMyOrdersParams = {}
+): Promise<{ orders: Order[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<Order[]>(`/orders/mine?${buildQuery(params)}`);
+  return { orders: data, meta };
+}
+
 export async function fetchOrderById(id: string): Promise<Order> {
   return apiFetch<Order>(`/orders/${id}`);
 }

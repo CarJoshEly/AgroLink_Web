@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -10,7 +10,7 @@ import ResendVerificationForm from "@/components/forms/ResendVerificationForm";
 
 type Status = "loading" | "success" | "error";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<Status>("loading");
@@ -65,5 +65,15 @@ export default function VerifyEmailPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={<div className="mx-auto max-w-md px-4 py-14 text-sm text-soil-400">Cargando…</div>}
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

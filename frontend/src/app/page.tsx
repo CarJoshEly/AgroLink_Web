@@ -1,9 +1,13 @@
-import Link from "next/link";
 import { fetchProducts } from "@/lib/api/products";
 import ProductCard from "@/components/product/ProductCard";
 
+// El catálogo cambia todo el tiempo (stock, productos nuevos, precios).
+// Sin esto, Next.js lo pre-renderiza una sola vez en el build y sirve esa
+// foto fija hasta el próximo deploy.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
-  const { products } = await fetchProducts({ limit: 8, sortBy: "createdAt", sortOrder: "desc" });
+  const { products } = await fetchProducts({ limit: 24 });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -17,12 +21,6 @@ export default async function HomePage() {
         <p className="text-forest-700 mt-3 max-w-lg">
           Explora productos publicados por productores y proveedores de todo el país.
         </p>
-        <Link
-          href="/productos"
-          className="inline-block mt-5 text-sm font-medium text-forest-700 border border-forest-300 px-4 py-2 rounded-stamp hover:bg-forest-50 transition-colors"
-        >
-          Ver catálogo completo
-        </Link>
       </div>
 
       {products.length === 0 ? (

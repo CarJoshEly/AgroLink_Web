@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPassword } from "@/lib/api/auth";
@@ -8,7 +8,7 @@ import { ApiError } from "@/lib/api/client";
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -108,5 +108,15 @@ export default function ResetPasswordPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={<div className="mx-auto max-w-md px-4 py-14 text-sm text-soil-400">Cargando…</div>}
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

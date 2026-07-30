@@ -3,13 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sprout, Heart, ShoppingCart, User, ChevronDown, LogOut } from "lucide-react";
+import { Sprout, Heart, ShoppingCart, User, ChevronDown, LogOut, Package } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 
 export default function Navbar() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: cart } = useCart();
+  const itemCount = cart?.items?.length ?? 0;
+  const isCustomer = user?.role === "CUSTOMER";
 
   async function handleLogout() {
     setMenuOpen(false);
@@ -38,6 +42,25 @@ export default function Navbar() {
           <Link href="/carrito" className="hover:text-forest-900 transition-colors">
             <ShoppingCart className="w-5 h-5" />
           </Link>
+
+         {isCustomer && (
+            <>
+              <Link href="/favoritos" className="hover:text-forest-900 transition-colors">
+                <Heart className="w-5 h-5" />
+              </Link>
+              <Link href="/pedidos" className="hover:text-forest-900 transition-colors" title="Mis pedidos">
+                <Package className="w-5 h-5" />
+              </Link>
+              <Link href="/carrito" className="relative hover:text-forest-900 transition-colors">
+                <ShoppingCart className="w-5 h-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-forest-700 text-stone-25 text-[10px] font-semibold rounded-full w-4 h-4 flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+            </>
+          )}
 
           {isLoading ? null : user ? (
             <div className="relative">

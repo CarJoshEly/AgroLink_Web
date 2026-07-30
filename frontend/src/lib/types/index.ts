@@ -247,6 +247,8 @@ export interface Order {
 
   items?: OrderItem[];
   statusHistory?: OrderStatusHistory[];
+  /** Incluida por ORDER_INCLUDE en orders.service.ts cuando el comprador ya reseñó al vendedor. */
+  sellerReview?: SellerReview | null;
 }
 
 export interface OrderStatusHistory {
@@ -268,6 +270,8 @@ export interface OrderItem {
   quantity: number;
   unitPrice: string;
   subtotal: string;
+  /** Incluida por ORDER_INCLUDE en orders.service.ts cuando el comprador ya reseñó este producto. */
+  review?: Pick<ProductReview, "id" | "rating" | "comment"> | null;
 }
 
 // --------------------------------------------------------------------------

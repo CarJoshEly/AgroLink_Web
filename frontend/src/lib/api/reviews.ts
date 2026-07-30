@@ -49,3 +49,64 @@ export async function fetchSellerReviews(
 export async function fetchSellerReviewSummary(sellerId: string): Promise<SellerReviewSummary> {
   return apiFetch<SellerReviewSummary>(`/reviews/sellers/${sellerId}/summary`);
 }
+
+// --------------------------------------------------------------------------
+// Escritura de reseñas
+//
+// OJO: producto y vendedor NO comparten forma. La reseña de producto usa un
+// solo `rating` (1-5) ligado a un `orderItemId` puntual; la de vendedor usa
+// las 5 dimensiones (quality/responseTime/compliance/attention/trust)
+// ligadas al `orderId` completo. El backend no tiene ventana de tiempo
+// límite para editar/eliminar — solo valida que la reseña sea del usuario
+// autenticado.
+// --------------------------------------------------------------------------
+
+export interface CreateProductReviewInput {
+  orderItemId: string;
+  rating: number;
+  comment?: string;
+}
+
+export interface UpdateProductReviewInput {
+  rating?: number;
+  comment?: string;
+}
+
+export async function createProductReview(input: CreateProductReviewInput): Promise<ProductReview> {
+  return apiFetch<ProductReview>("/reviews/products", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function updateProductReview(
+  id: string,
+  input: UpdateProductReviewInput
+): Promise<ProductReview> {
+  return apiFetch<ProductReview>(`/reviews/products/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+export async function deleteProductReview(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/reviews/products/${id}`, { method: "DELETE" });
+}
+
+export interface CreateSellerReviewInput {
+  orderId: string;
+  qualityScore: number;
+  responseTimeScore: number;
+  complianceScore: number;
+  attentionScore: number;
+  trustScore: number;
+  comment?: string;
+}
+
+export type UpdateSellerReviewInput = Partial<Omit<CreateSellerReviewInput, "orderId">>;
+
+export async function createSellerReview(input: CreateSellerReviewInput): Promise<SellerReview> {
+  return apiFetch<SellerReview>("/reviews/sellers", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function updateSellerReview(id: string, input: UpdateSellerReviewInput): Promise<SellerReview> {
+  return apiFetch<SellerReview>(`/reviews/sellers/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+export async function deleteSellerReview(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/reviews/sellers/${id}`, { method: "DELETE" });
+}

@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ShieldAlert } from "lucide-react";
 import ProductForm, { type ProductFormValues } from "@/components/forms/ProductForm";
 import ImageUploader from "@/components/product/ImageUploader";
 import { createProduct } from "@/lib/api/products";
 import { ApiError } from "@/lib/api/client";
 import type { Product } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function NewProductPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isVerified = user?.sellerProfile?.verificationStatus === "VERIFIED";
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [created, setCreated] = useState<Product | null>(null);
@@ -57,6 +60,15 @@ export default function NewProductPage() {
   return (
     <div>
       <h1 className="font-display text-2xl text-forest-900 mb-6">Publicar producto</h1>
+      {!isVerified && (
+        <div className="max-w-lg mb-4 flex items-start gap-2 rounded-stamp border border-maize-300 bg-maize-100 px-3 py-2.5 text-sm text-soil-600">
+          <ShieldAlert className="w-4 h-4 text-maize-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+          <span>
+            Vas a publicar este producto sin el sello de <strong>verificado</strong> — los
+            compradores lo verán, pero sabrán que tu cuenta aún no fue validada.
+          </span>
+        </div>
+      )}
       <ProductForm
         onSubmit={handleSubmit}
         submitLabel="Crear producto"

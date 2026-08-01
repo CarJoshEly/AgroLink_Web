@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api/client";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const schema = z.object({
   email: z.string().email("Correo inválido"),
@@ -18,6 +19,10 @@ type FormValues = z.infer<typeof schema>;
 
 export default function LoginForm() {
   const router = useRouter();
+  // Cuando RequireRole redirige aquí (p. ej. desde /carrito sin sesión),
+  // manda `?redirect=<ruta original>` para volver ahí tras iniciar sesión.
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -31,7 +36,9 @@ export default function LoginForm() {
     setFormError(null);
     try {
       const user = await login(values.email, values.password);
-      if (user.role === "ADMIN") {
+      if (redirect) {
+        router.push(redirect);
+      } else if (user.role === "ADMIN") {
         router.push("/admin/dashboard");
       } else if (user.role === "SELLER") {
         router.push(user.sellerProfile ? "/vendedor/dashboard" : "/");
@@ -68,7 +75,7 @@ export default function LoginForm() {
 
       <label className="block">
         <span className="text-sm font-medium text-forest-800">Contraseña</span>
-        <input type="password" className="input mt-1" {...register("password")} />
+        <PasswordInput className="input mt-1" {...register("password")} />
         {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
       </label>
 

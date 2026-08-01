@@ -8,6 +8,8 @@ import Link from "next/link";
 import { registerSeller } from "@/lib/api/auth";
 import { fetchDepartments, fetchMunicipalities } from "@/lib/api/locations";
 import { ApiError } from "@/lib/api/client";
+import PasswordInput from "@/components/ui/PasswordInput";
+import LocationMapPicker from "./LocationMapPicker";
 import type { Department, Municipality } from "@/lib/types";
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
@@ -64,6 +66,10 @@ export default function RegisterSellerForm() {
   } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(schema) });
 
   const departmentId = watch("departmentId");
+  const rawLatitude = watch("latitude");
+  const rawLongitude = watch("longitude");
+  const latitude = typeof rawLatitude === "number" ? rawLatitude : null;
+  const longitude = typeof rawLongitude === "number" ? rawLongitude : null;
 
   useEffect(() => {
     fetchDepartments()
@@ -132,7 +138,7 @@ export default function RegisterSellerForm() {
         <input {...register("phone")} className="input" />
       </Field>
       <Field label="Contraseña" required error={errors.password?.message}>
-        <input type="password" {...register("password")} className="input" />
+        <PasswordInput {...register("password")} className="input" />
       </Field>
 
       <Field label="Nombre del negocio / finca" required error={errors.businessName?.message}>
@@ -181,18 +187,19 @@ export default function RegisterSellerForm() {
         <input {...register("address")} className="input" placeholder="Punto de referencia, calle, aldea…" />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Latitud" required error={errors.latitude?.message}>
-          <input type="number" step="any" {...register("latitude")} className="input" />
-        </Field>
-        <Field label="Longitud" required error={errors.longitude?.message}>
-          <input type="number" step="any" {...register("longitude")} className="input" />
-        </Field>
+      <div>
+        <LocationMapPicker
+          latitude={latitude}
+          longitude={longitude}
+          onChange={(lat, lng) => {
+            setValue("latitude", lat, { shouldValidate: true });
+            setValue("longitude", lng, { shouldValidate: true });
+          }}
+        />
+        {(errors.latitude?.message || errors.longitude?.message) && (
+          <p className="text-xs text-red-600 mt-1">Marca la ubicación de tu negocio en el mapa.</p>
+        )}
       </div>
-      <p className="text-xs text-soil-500 -mt-2">
-        Tip: puedes obtener tu latitud/longitud abriendo tu ubicación en Google Maps y copiando las
-        coordenadas. El selector visual en mapa llega en el próximo sprint.
-      </p>
 
       <button
         type="submit"

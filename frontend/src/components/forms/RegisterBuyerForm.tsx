@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { registerBuyer } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 // Replica exacta de la regex del backend: mínimo 8 caracteres, al menos una
 // letra y al menos un número.
@@ -83,7 +84,7 @@ export default function RegisterBuyerForm() {
         <input {...register("phone")} className="input" />
       </Field>
       <Field label="Contraseña" required error={errors.password?.message}>
-        <input type="password" {...register("password")} className="input" />
+        <PasswordInput {...register("password")} className="input" />
       </Field>
 
       <button

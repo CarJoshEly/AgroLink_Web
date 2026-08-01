@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
@@ -20,6 +20,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "AgroLink Honduras | Marketplace agrícola",
   description: "Conectando el ecosistema agrícola hondureño.",
+};
+
+// El sitio todavía no tiene un tema oscuro propio (solo el crema/verde de
+// siempre) — sin esto, algunos navegadores móviles (el "tema oscuro
+// forzado" de Chrome/Samsung Internet) intentan invertir los colores por su
+// cuenta y rompen cosas como el ícono de mostrar/ocultar contraseña.
+export const viewport: Viewport = {
+  colorScheme: "light",
 };
 
 export default function RootLayout({

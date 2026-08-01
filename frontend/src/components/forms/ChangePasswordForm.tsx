@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { changePassword } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 
@@ -40,8 +41,7 @@ export default function ChangePasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-3">
       <label className="block">
         <span className="text-xs font-medium text-forest-700">Contraseña actual</span>
-        <input
-          type="password"
+        <PasswordInput
           required
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
@@ -50,8 +50,7 @@ export default function ChangePasswordForm() {
       </label>
       <label className="block">
         <span className="text-xs font-medium text-forest-700">Nueva contraseña</span>
-        <input
-          type="password"
+        <PasswordInput
           required
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}

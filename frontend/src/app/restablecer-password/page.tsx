@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPassword } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 
@@ -80,8 +81,7 @@ function ResetPasswordContent() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
           <span className="text-sm font-medium text-forest-800">Nueva contraseña</span>
-          <input
-            type="password"
+          <PasswordInput
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -90,8 +90,7 @@ function ResetPasswordContent() {
         </label>
         <label className="block">
           <span className="text-sm font-medium text-forest-800">Confirmar contraseña</span>
-          <input
-            type="password"
+          <PasswordInput
             required
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}

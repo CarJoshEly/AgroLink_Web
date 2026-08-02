@@ -8,18 +8,33 @@
 }
 
 body {
-  @apply bg-stone-25 text-forest-900 font-body;
+  @apply bg-bg text-textPrimary font-body antialiased selection:bg-secondary/30 selection:text-textPrimary;
 }
 
 @layer components {
   .input {
-    @apply w-full rounded-stamp border border-forest-100 px-3 py-2 text-sm text-forest-800
-      focus:outline-none focus:ring-2 focus:ring-forest-300 bg-white;
+    @apply w-full rounded-xl border border-border px-4 py-2.5 text-sm text-textPrimary
+      focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-white shadow-sm transition-all;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-sm transition-all active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-white hover:bg-surfaceVariant text-textPrimary font-medium text-sm px-5 py-2.5 rounded-xl border border-border shadow-sm transition-all active:scale-[0.98];
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary-dark text-onSecondary font-semibold text-sm px-5 py-2.5 rounded-xl shadow-sm transition-all active:scale-[0.98];
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/40;
   }
 }
 
-/* Sello/insignia de verificación: motivo de "sello de mercado" que sirve
-   de elemento de firma visual en toda la plataforma. */
+/* Sello de verificación */
 .stamp-seal {
   clip-path: polygon(
     50% 0%, 61% 7%, 74% 2%, 80% 14%, 93% 15%, 94% 28%,
@@ -28,4 +43,19 @@ body {
     6% 66%, 12% 54%, 4% 44%, 14% 35%, 12% 22%, 25% 19%,
     28% 6%, 40% 10%
   );
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out forwards;
 }

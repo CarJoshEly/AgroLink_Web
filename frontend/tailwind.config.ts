@@ -5,35 +5,78 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Paleta AgroLink — inspirada en el campo hondureño:
-        // tierra, follaje y grano maduro. Nada de beige/terracota genérico.
-        soil: {
-          50: "#f6f2ec",
-          100: "#ebe1d1",
-          200: "#d3bd9c",
-          400: "#a06a3f",
-          600: "#7a4a2c",
-          800: "#5a3420",
-          900: "#3d2416",
+        // AppColors — Fuente de verdad compartida con la app de Flutter
+        primary: {
+          DEFAULT: "#2E7D32", // verde agro
+          dark: "#1B5E20",
+          light: "#60AD5E",
         },
+        secondary: {
+          DEFAULT: "#F9A825", // dorado cosecha
+          dark: "#C17900",
+        },
+        onPrimary: "#FFFFFF",
+        onSecondary: "#1A1A1A",
+
+        // Neutrales de AppColors
+        bg: "#FAFAF7",
+        surface: "#FFFFFF",
+        surfaceVariant: "#F1F3EE",
+        border: "#E0E3DA",
+        textPrimary: "#1B1F18",
+        textSecondary: "#5B6358",
+        textDisabled: "#9AA396",
+
+        // Modo oscuro
+        bgDark: "#13160F",
+        surfaceDark: "#1C2117",
+        borderDark: "#343C2C",
+        textPrimaryDark: "#EDF0E8",
+        textSecondaryDark: "#B2BAA9",
+
+        // Compatibilidad con la escala forest / maize / soil
         forest: {
-          50: "#eef3ee",
-          100: "#d3e2d4",
-          300: "#7fa985",
-          500: "#3f7350",
-          600: "#2c5a3c",
-          700: "#204631",
-          800: "#173424",
-          900: "#0f241a",
+          50: "#F1F3EE",
+          100: "#E3F1E1",
+          300: "#60AD5E",
+          500: "#2E7D32",
+          600: "#2E7D32",
+          700: "#1B5E20",
+          800: "#1B5E20",
+          900: "#13160F",
+          950: "#0C0E0A",
         },
         maize: {
-          100: "#fbe9c2",
-          300: "#f2c968",
-          500: "#e0a72e",
-          600: "#c08c1e",
+          100: "#FCEFD0",
+          300: "#F9A825",
+          500: "#F9A825",
+          600: "#C17900",
+        },
+        soil: {
+          50: "#FAFAF7",
+          100: "#E0E3DA",
+          400: "#9AA396",
+          500: "#5B6358",
+          600: "#5B6358",
+          800: "#1B1F18",
+          900: "#1B1F18",
         },
         stone: {
-          25: "#fbfaf7",
+          25: "#FAFAF7",
+        },
+
+        // Semántica de estado
+        status: {
+          success: "#2E7D32",
+          successContainer: "#E3F1E1",
+          warning: "#F9A825",
+          warningContainer: "#FCEFD0",
+          info: "#1976D2",
+          infoContainer: "#DDEAFB",
+          danger: "#C62828",
+          dangerContainer: "#F9DEDE",
+          neutral: "#616161",
+          neutralContainer: "#E7E7E5",
         },
       },
       fontFamily: {
@@ -41,7 +84,7 @@ const config: Config = {
         body: ["var(--font-inter)", "sans-serif"],
       },
       borderRadius: {
-        stamp: "3px",
+        stamp: "6px",
       },
     },
   },

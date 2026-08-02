@@ -16,10 +16,12 @@ import {
   Store,
   LayoutDashboard,
   Sparkles,
+  UserPlus,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import NotificationBell from "@/components/layout/NotificationBell";
+import RegisterChoiceModal from "@/components/auth/RegisterChoiceModal";
 
 export default function Navbar() {
   const { user, isLoading, logout } = useAuth();
@@ -27,6 +29,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+
   const { data: cart } = useCart();
   const itemCount = cart?.items?.length ?? 0;
   const isCustomer = user?.role === "CUSTOMER";
@@ -202,17 +206,18 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-textSecondary hover:text-textPrimary hover:bg-surfaceVariant rounded-xl transition-all"
+                className="inline-flex items-center px-3.5 py-2 text-sm font-medium text-textSecondary hover:text-textPrimary hover:bg-surfaceVariant rounded-xl transition-all"
               >
-                Ingresar
+                Iniciar Sesión
               </Link>
-              <Link
-                href="/registro/vendedor"
+              <button
+                type="button"
+                onClick={() => setRegisterModalOpen(true)}
                 className="btn-gold shadow-sm text-xs sm:text-sm py-2 px-4"
               >
-                <Store className="w-4 h-4" />
-                <span>Vender</span>
-              </Link>
+                <UserPlus className="w-4 h-4" />
+                <span>Registrarse</span>
+              </button>
             </div>
           )}
 
@@ -248,15 +253,33 @@ export default function Navbar() {
             Directorio de Vendedores
           </Link>
           {!user && (
-            <Link
-              href="/login"
-              className="block px-3 py-2 rounded-xl text-sm font-medium text-textPrimary hover:bg-surfaceVariant sm:hidden"
-            >
-              Iniciar Sesión
-            </Link>
+            <div className="pt-2 border-t border-border space-y-2">
+              <Link
+                href="/login"
+                className="block px-3 py-2 rounded-xl text-sm font-medium text-textPrimary hover:bg-surfaceVariant"
+              >
+                Iniciar Sesión
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setRegisterModalOpen(true);
+                }}
+                className="w-full btn-gold py-2.5 text-xs font-bold"
+              >
+                Registrarse
+              </button>
+            </div>
           )}
         </div>
       )}
+
+      {/* Modal para elegir Comprador o Vendedor */}
+      <RegisterChoiceModal
+        isOpen={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+      />
     </header>
   );
 }

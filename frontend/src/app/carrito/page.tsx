@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, CreditCard, ShieldCheck } from "lucide-react";
 import RequireRole from "@/components/auth/RequireRole";
 import CartItemRow from "@/components/cart/CartItemRow";
 import CheckoutConfirmation from "@/components/cart/CheckoutConfirmation";
+import PayPalPaymentModal from "@/components/cart/PayPalButtonModal";
 import { useCart, useCheckout } from "@/hooks/useCart";
 import { groupCartBySeller } from "@/lib/api/cart";
 import { ApiError } from "@/lib/api/client";
@@ -17,16 +18,20 @@ function CartPageContent() {
 
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrders, setCreatedOrders] = useState<Order[] | null>(null);
+  const [showPayPalModal, setShowPayPalModal] = useState(false);
 
   const groups = cart ? groupCartBySeller(cart.items) : [];
 
-  async function handleCheckout() {
+  async function handlePaymentSuccess(details: any) {
     setCheckoutError(null);
     try {
       const orders = await checkoutMutation.mutateAsync();
+      setShowPayPalModal(false);
       setCreatedOrders(orders);
     } catch (err) {
-      setCheckoutError(err instanceof ApiError ? err.message : "No se pudo generar la solicitud de compra");
+      setCheckoutError(
+        err instanceof ApiError ? err.message : "No se pudo generar la solicitud de compra"
+      );
     }
   }
 
@@ -40,26 +45,25 @@ function CartPageContent() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14">
-      <h1 className="font-display text-2xl text-forest-900 mb-2">Tu carrito</h1>
-      <p className="text-sm text-soil-500 mb-8">
-        Al enviar, se genera una Solicitud de Compra por cada vendedor que el vendedor debe aceptar o
-        rechazar (aún no se procesa pago en el MVP).
+      <h1 className="font-display text-3xl font-bold text-app-textPrimary mb-2">Tu Carrito</h1>
+      <p className="text-sm text-app-textSecondary mb-8 leading-relaxed">
+        Revisa los productos en tu carrito. Puedes abonar mediante la pasarela segura de PayPal o enviar la solicitud directa a los productores.
       </p>
 
-      {isLoading && <p className="text-sm text-soil-400">Cargando carrito…</p>}
+      {isLoading && <p className="text-sm text-app-textSecondary">Cargando carrito…</p>}
 
       {error && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-status-danger">
           {error instanceof ApiError ? error.message : "No se pudo cargar el carrito"}
         </p>
       )}
 
       {cart && cart.items.length === 0 && (
-        <div className="border border-dashed border-forest-200 rounded-stamp p-10 text-center text-soil-400 text-sm">
-          <ShoppingBag className="w-8 h-8 mx-auto mb-3 text-forest-200" />
+        <div className="border border-dashed border-app-border rounded-2xl p-12 text-center text-app-textSecondary text-sm bg-white shadow-xs">
+          <ShoppingBag className="w-12 h-12 mx-auto mb-3 text-primary/40" />
           Tu carrito está vacío.
           <div className="mt-4">
-            <Link href="/" className="text-forest-700 font-medium hover:underline">
+            <Link href="/productos" className="btn-primary text-xs py-2 px-4">
               Explorar catálogo
             </Link>
           </div>
@@ -69,17 +73,18 @@ function CartPageContent() {
       {cart && cart.items.length > 0 && (
         <>
           {groups.length > 1 && (
-            <div className="bg-maize-50 border border-maize-200 rounded-stamp p-3 mb-6 text-xs text-maize-800">
-              Tu carrito tiene productos de <strong>{groups.length} vendedores</strong>. Al finalizar,
-              recibirás {groups.length} solicitudes de compra separadas, una por cada vendedor.
+            <div className="bg-status-warningContainer/60 border border-secondary/30 rounded-2xl p-4 mb-6 text-xs text-app-textPrimary leading-relaxed">
+              Tu carrito contiene productos de <strong>{groups.length} vendedores distintos</strong>. Se generará una solicitud de orden individual por cada productor.
             </div>
           )}
 
           <div className="space-y-8">
             {groups.map((group) => (
               <div key={group.seller.id}>
-                <p className="text-xs uppercase tracking-wide text-soil-400 mb-2">{group.seller.businessName}</p>
-                <div className="border border-forest-100 rounded-stamp px-4">
+                <p className="text-xs uppercase tracking-wider text-secondary-dark font-bold mb-2">
+                  {group.seller.businessName}
+                </p>
+                <div className="border border-app-border rounded-2xl bg-white px-4 shadow-xs">
                   {group.items.map((item) => (
                     <CartItemRow key={item.id} item={item} />
                   ))}
@@ -88,21 +93,39 @@ function CartPageContent() {
             ))}
           </div>
 
-          <div className="mt-8 flex items-center justify-between border-t border-forest-100 pt-6">
+          {/* Checkout Bar */}
+          <div className="mt-10 bg-white p-6 rounded-2xl border border-app-border shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-sm text-soil-500">Total</p>
-              <p className="font-display text-2xl text-forest-800">L. {cart.total.toLocaleString("es-HN")}</p>
+              <p className="text-xs text-app-textSecondary">Monto Total del Carrito</p>
+              <p className="font-display text-3xl font-bold text-app-textPrimary">
+                L. {cart.total.toLocaleString("es-HN")}
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={checkoutMutation.isPending}
-              className="bg-forest-700 text-stone-25 font-medium px-6 py-3 rounded-stamp hover:bg-forest-800 transition-colors disabled:opacity-60"
-            >
-              {checkoutMutation.isPending ? "Enviando…" : "Enviar solicitud de compra"}
-            </button>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setShowPayPalModal(true)}
+                className="btn-gold w-full sm:w-auto px-6 py-3 text-sm shadow-md"
+              >
+                <CreditCard className="w-4 h-4" />
+                Pagar con PayPal / Tarjeta
+              </button>
+            </div>
           </div>
-          {checkoutError && <p className="text-sm text-red-600 mt-3 text-right">{checkoutError}</p>}
+
+          {checkoutError && (
+            <p className="text-sm text-status-danger mt-4 text-right font-medium">{checkoutError}</p>
+          )}
+
+          {/* Modal PayPal */}
+          <PayPalPaymentModal
+            isOpen={showPayPalModal}
+            onClose={() => setShowPayPalModal(false)}
+            totalHnl={cart.total}
+            onPaymentSuccess={handlePaymentSuccess}
+            isProcessing={checkoutMutation.isPending}
+          />
         </>
       )}
     </div>

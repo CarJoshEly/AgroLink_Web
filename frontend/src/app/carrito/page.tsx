@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, CreditCard, ShieldCheck } from "lucide-react";
+import { ShoppingBag, CreditCard } from "lucide-react";
 import RequireRole from "@/components/auth/RequireRole";
 import CartItemRow from "@/components/cart/CartItemRow";
 import CheckoutConfirmation from "@/components/cart/CheckoutConfirmation";
@@ -47,7 +47,7 @@ function CartPageContent() {
     <div className="mx-auto max-w-3xl px-4 py-14">
       <h1 className="font-display text-3xl font-bold text-app-textPrimary mb-2">Tu Carrito</h1>
       <p className="text-sm text-app-textSecondary mb-8 leading-relaxed">
-        Revisa los productos en tu carrito. Puedes abonar mediante la pasarela segura de PayPal o enviar la solicitud directa a los productores.
+        Revisa los productos en tu carrito y procesa tu pago de forma segura con PayPal o tarjeta.
       </p>
 
       {isLoading && <p className="text-sm text-app-textSecondary">Cargando carrito…</p>}
@@ -74,7 +74,7 @@ function CartPageContent() {
         <>
           {groups.length > 1 && (
             <div className="bg-status-warningContainer/60 border border-secondary/30 rounded-2xl p-4 mb-6 text-xs text-app-textPrimary leading-relaxed">
-              Tu carrito contiene productos de <strong>{groups.length} vendedores distintos</strong>. Se generará una solicitud de orden individual por cada productor.
+              Tu carrito contiene productos de <strong>{groups.length} vendedores distintos</strong>. Se procesará la orden agrupada por cada productor.
             </div>
           )}
 
@@ -93,7 +93,7 @@ function CartPageContent() {
             ))}
           </div>
 
-          {/* Checkout Bar */}
+          {/* Checkout Action Section */}
           <div className="mt-10 bg-white p-6 rounded-2xl border border-app-border shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
               <p className="text-xs text-app-textSecondary">Monto Total del Carrito</p>
@@ -102,16 +102,15 @@ function CartPageContent() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => setShowPayPalModal(true)}
-                className="btn-gold w-full sm:w-auto px-6 py-3 text-sm shadow-md"
-              >
-                <CreditCard className="w-4 h-4" />
-                Pagar con PayPal / Tarjeta
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowPayPalModal(true)}
+              disabled={checkoutMutation.isPending}
+              className="btn-gold w-full sm:w-auto px-8 py-3.5 text-sm font-bold shadow-md"
+            >
+              <CreditCard className="w-5 h-5" />
+              Pagar con PayPal / Tarjeta
+            </button>
           </div>
 
           {checkoutError && (

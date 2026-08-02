@@ -10,14 +10,14 @@
  */
 
 import { apiFetch } from "./client";
-import type { Cart, CartItem, Order, SellerProfile } from "@/lib/types";
+import type { Cart, CartItem, Order, PublicSeller, SellerProfile } from "@/lib/types";
 
 // El backend añade `seller` al producto de cada ítem del carrito
 // (id, businessName, verificationStatus) para poder agrupar por vendedor.
 export type CartItemWithSeller = CartItem & {
   subtotal: number;
   product: NonNullable<CartItem["product"]> & {
-    seller: Pick<SellerProfile, "id" | "businessName" | "verificationStatus">;
+    seller?: PublicSeller;
   };
 };
 
@@ -55,15 +55,31 @@ export async function checkoutCart(): Promise<Order[]> {
 
 /** Agrupa los ítems del carrito por vendedor para la UI (RF: agrupación visual antes del checkout). */
 export function groupCartBySeller(items: CartItemWithSeller[]) {
-  const groups = new Map<string, { seller: CartItemWithSeller["product"]["seller"]; items: CartItemWithSeller[] }>();
+  const groups = new Map<
+    string,
+    {
+      seller: PublicSeller;
+      items: CartItemWithSeller[];
+    }
+  >();
+
   for (const item of items) {
-    const sellerId = item.product.seller.id;
+    if (!item || !item.product) continue;
+
+    const sellerId = item.product.seller?.id || item.product.sellerId || "vendedor-agrolink";
+    const sellerObj: PublicSeller = item.product.seller ?? {
+      id: sellerId,
+      businessName: "Productor / Vendedor AgroLink",
+      verificationStatus: "PENDING",
+    };
+
     const group = groups.get(sellerId);
     if (group) {
       group.items.push(item);
     } else {
-      groups.set(sellerId, { seller: item.product.seller, items: [item] });
+      groups.set(sellerId, { seller: sellerObj, items: [item] });
     }
   }
+
   return Array.from(groups.values());
 }

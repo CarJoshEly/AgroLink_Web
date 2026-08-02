@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Sprout, Heart, ShoppingCart, User, ChevronDown, LogOut, Package } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export default function Navbar() {
   const { user, isLoading, logout } = useAuth();
@@ -61,6 +62,8 @@ export default function Navbar() {
               </Link>
             </>
           )}
+
+          {!isLoading && user && <NotificationBell />}
 
           {isLoading ? null : user ? (
             <div className="relative">

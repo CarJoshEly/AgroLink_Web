@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/types";
 import VerificationBadge from "@/components/ui/VerificationBadge";
 import FavoriteButton from "@/components/ui/FavoriteButton";
+import ReportButton from "@/components/reports/ReportButton";
 import { useFavoriteProductIds } from "@/hooks/useFavorites";
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -16,8 +17,9 @@ export default function ProductCard({ product }: { product: Product }) {
       href={`/productos/${product.id}`}
       className="group relative block rounded-stamp overflow-hidden border border-forest-100 hover:border-forest-300 transition-colors bg-white"
     >
-      <div className="absolute top-2 right-2 z-10 bg-white/90 rounded-full">
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 rounded-full px-1">
         <FavoriteButton productId={product.id} isFavorite={isFavorite} size={18} />
+        <ReportButton targetType="PRODUCT" targetId={product.id} size={15} className="p-1.5" />
       </div>
 
       <div className="aspect-square bg-forest-50 overflow-hidden">

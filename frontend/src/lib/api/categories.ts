@@ -1,6 +1,29 @@
 import { apiFetch } from "./client";
 import type { Category } from "@/lib/types";
 
+export interface CreateCategoryInput {
+  name: string;
+  parentId?: string;
+  isActive?: boolean;
+}
+
+export type UpdateCategoryInput = Partial<CreateCategoryInput>;
+
+/** POST /categories — requiere rol ADMIN. */
+export async function createCategory(input: CreateCategoryInput): Promise<Category> {
+  return apiFetch<Category>("/categories", { method: "POST", body: JSON.stringify(input) });
+}
+
+/** PATCH /categories/:id — requiere rol ADMIN. */
+export async function updateCategory(id: string, input: UpdateCategoryInput): Promise<Category> {
+  return apiFetch<Category>(`/categories/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+/** DELETE /categories/:id — requiere rol ADMIN. */
+export async function deleteCategory(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/categories/${id}`, { method: "DELETE" });
+}
+
 export async function fetchCategories(): Promise<Category[]> {
   return apiFetch<Category[]>("/categories");
 }

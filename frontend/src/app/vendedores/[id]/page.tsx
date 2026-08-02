@@ -4,6 +4,7 @@ import { fetchSellerReviewSummary } from "@/lib/api/reviews";
 import ProductCard from "@/components/product/ProductCard";
 import VerificationBadge from "@/components/ui/VerificationBadge";
 import SellerReviewSummaryView from "@/components/product/SellerReviewSummaryView";
+import ReportButton from "@/components/reports/ReportButton";
 
 export default async function SellerProfilePage({ params }: { params: { id: string } }) {
   const { seller, products } = await fetchSellerProfile(params.id);
@@ -20,6 +21,7 @@ export default async function SellerProfilePage({ params }: { params: { id: stri
           {seller?.businessName ?? "Perfil de vendedor"}
         </h1>
         <VerificationBadge verified={seller?.verificationStatus === "VERIFIED"} size="md" />
+        {seller && <ReportButton targetType="SELLER" targetId={seller.id} label="Reportar" size={16} />}
       </div>
 
       {reviewSummary && reviewSummary.totalReviews > 0 && (

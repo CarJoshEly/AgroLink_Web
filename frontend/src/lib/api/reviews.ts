@@ -1,5 +1,5 @@
 import { apiFetch, apiFetchPaginated, type PaginationMeta } from "./client";
-import type { ProductReview, SellerReview } from "@/lib/types";
+import type { ProductReview, ReviewModerationStatus, SellerReview } from "@/lib/types";
 
 /** Shape real de reviews.service.ts#getProductSummary (producto usa `rating` simple, no 5 scores). */
 export interface ProductReviewSummary {
@@ -109,4 +109,52 @@ export async function updateSellerReview(id: string, input: UpdateSellerReviewIn
 
 export async function deleteSellerReview(id: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/reviews/sellers/${id}`, { method: "DELETE" });
+}
+
+// --------------------------------------------------------------------------
+// Moderación (admin)
+// --------------------------------------------------------------------------
+
+/** GET /reviews/products/pending — cola de moderación de reseñas de producto. */
+export async function fetchPendingProductReviews(
+  page = 1,
+  limit = 10
+): Promise<{ reviews: ProductReview[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<ProductReview[]>(
+    `/reviews/products/pending?page=${page}&limit=${limit}`
+  );
+  return { reviews: data, meta };
+}
+
+/** GET /reviews/sellers/pending — cola de moderación de reseñas de vendedor. */
+export async function fetchPendingSellerReviews(
+  page = 1,
+  limit = 10
+): Promise<{ reviews: SellerReview[]; meta: PaginationMeta | undefined }> {
+  const { data, meta } = await apiFetchPaginated<SellerReview[]>(
+    `/reviews/sellers/pending?page=${page}&limit=${limit}`
+  );
+  return { reviews: data, meta };
+}
+
+/** PATCH /reviews/products/:id/moderate — status solo admite APPROVED/REJECTED. */
+export async function moderateProductReview(
+  id: string,
+  status: Extract<ReviewModerationStatus, "APPROVED" | "REJECTED">
+): Promise<ProductReview> {
+  return apiFetch<ProductReview>(`/reviews/products/${id}/moderate`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+/** PATCH /reviews/sellers/:id/moderate — status solo admite APPROVED/REJECTED. */
+export async function moderateSellerReview(
+  id: string,
+  status: Extract<ReviewModerationStatus, "APPROVED" | "REJECTED">
+): Promise<SellerReview> {
+  return apiFetch<SellerReview>(`/reviews/sellers/${id}/moderate`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 }

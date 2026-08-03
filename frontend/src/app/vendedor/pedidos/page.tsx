@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { fetchReceivedOrders, acceptOrder, type OrderFilters } from "@/lib/api/orders";
+import { ApiError } from "@/lib/api/client";
 import { ORDER_STATUS_LABELS } from "@/lib/labels";
 import type { Order, OrderStatus } from "@/lib/types";
 
@@ -22,20 +23,38 @@ function AcceptButton({ order }: { order: Order }) {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => acceptOrder(order.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["received-orders"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["received-orders"] });
+      // Aceptar descuenta stock en el backend (ver comentario en
+      // lib/api/orders.ts) — sin esto, "Mis productos"/inventario se queda
+      // con el stock viejo en caché hasta que expire por su cuenta.
+      queryClient.invalidateQueries({ queryKey: ["my-products"] });
+      for (const item of order.items ?? []) {
+        queryClient.invalidateQueries({ queryKey: ["product", item.productId] });
+      }
+    },
   });
 
   return (
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        mutation.mutate();
-      }}
-      disabled={mutation.isPending}
-      className="text-xs font-medium text-forest-700 border border-forest-300 px-3 py-1 rounded-stamp hover:bg-forest-50 disabled:opacity-50"
-    >
-      {mutation.isPending ? "Aceptando…" : "Aceptar"}
-    </button>
+    <div>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          mutation.mutate();
+        }}
+        disabled={mutation.isPending}
+        className="text-xs font-medium text-forest-700 border border-forest-300 px-3 py-1 rounded-stamp hover:bg-forest-50 disabled:opacity-50"
+      >
+        {mutation.isPending ? "Aceptando…" : "Aceptar"}
+      </button>
+      {mutation.isError && (
+        <p className="text-xs text-red-600 mt-1">
+          {mutation.error instanceof ApiError
+            ? mutation.error.rawMessage.join(" ")
+            : "No se pudo aceptar el pedido."}
+        </p>
+      )}
+    </div>
   );
 }
 

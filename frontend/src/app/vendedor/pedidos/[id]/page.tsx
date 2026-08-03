@@ -115,9 +115,21 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     queryClient.invalidateQueries({ queryKey: ["received-orders"] });
   }
 
+  // Aceptar (a diferencia de rechazar/preparar/entregar/cancelar) descuenta
+  // stock en el backend — sin invalidar estas dos, "Mis productos" e
+  // inventario se quedan con el stock viejo en caché.
+  function refreshAfterAccept() {
+    refresh();
+    queryClient.invalidateQueries({ queryKey: ["my-products"] });
+    for (const item of order?.items ?? []) {
+      queryClient.invalidateQueries({ queryKey: ["product", item.productId] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-history", item.productId] });
+    }
+  }
+
   const acceptMutation = useMutation({
     mutationFn: () => acceptOrder(params.id),
-    onSuccess: refresh,
+    onSuccess: refreshAfterAccept,
   });
   const prepareMutation = useMutation({
     mutationFn: () => prepareOrder(params.id),

@@ -1,5 +1,5 @@
 import { apiFetch, apiFetchForm } from "./client";
-import type { User, VerificationStatus } from "@/lib/types";
+import type { IdentityVerification, User } from "@/lib/types";
 
 // --------------------------------------------------------------------------
 // Registro de comprador
@@ -158,26 +158,32 @@ export async function changePassword(input: {
 // Verificación de identidad del vendedor — Paso 2 (autenticado)
 // --------------------------------------------------------------------------
 
-export interface IdentityVerificationInput {
+/**
+ * Los 4 campos son obligatorios solo en el primer envío — en un reenvío
+ * (tras un rechazo) el backend conserva la URL anterior de cualquier campo
+ * omitido (`uploadOrKeep` en users.service.ts), así que el formulario puede
+ * mandar solo la(s) foto(s) que el admin pidió corregir.
+ */
+export type IdentityVerificationInput = Partial<{
   dniFront: File;
   dniBack: File;
   selfie: File;
   lifeProof: File;
-}
+}>;
 
-export interface IdentityVerificationResponse {
-  status: VerificationStatus;
-  message: string;
-}
+// El backend devuelve el registro `IdentityVerification` completo (no un
+// `{status, message}` resumido) — se reusa el tipo real en vez de inventar
+// uno aparte que nadie garantiza que coincida.
+export type IdentityVerificationResponse = IdentityVerification;
 
 export async function submitIdentityVerification(
   input: IdentityVerificationInput
 ): Promise<IdentityVerificationResponse> {
   const formData = new FormData();
-  formData.append("dniFront", input.dniFront);
-  formData.append("dniBack", input.dniBack);
-  formData.append("selfie", input.selfie);
-  formData.append("lifeProof", input.lifeProof);
+  if (input.dniFront) formData.append("dniFront", input.dniFront);
+  if (input.dniBack) formData.append("dniBack", input.dniBack);
+  if (input.selfie) formData.append("selfie", input.selfie);
+  if (input.lifeProof) formData.append("lifeProof", input.lifeProof);
 
   return apiFetchForm<IdentityVerificationResponse>("/users/me/identity-verification", {
     method: "PUT",

@@ -28,6 +28,7 @@ const STATUS_LABELS: Record<VerificationStatus, string> = {
 };
 
 type FileKey = "dniFront" | "dniBack" | "selfie" | "lifeProof";
+const FILE_KEYS: FileKey[] = ["dniFront", "dniBack", "selfie", "lifeProof"];
 
 const FILE_LABELS: Record<FileKey, string> = {
   dniFront: "DNI (frontal)",
@@ -36,10 +37,24 @@ const FILE_LABELS: Record<FileKey, string> = {
   lifeProof: "Prueba de vida",
 };
 
+const URL_FIELD: Record<FileKey, "dniFrontUrl" | "dniBackUrl" | "selfieUrl" | "lifeProofUrl"> = {
+  dniFront: "dniFrontUrl",
+  dniBack: "dniBackUrl",
+  selfie: "selfieUrl",
+  lifeProof: "lifeProofUrl",
+};
+
 export default function IdentityVerificationForm() {
   const { user, setUser } = useAuth();
   const status = user?.sellerProfile?.verificationStatus ?? "PENDING";
-  const rejectionReason = user?.sellerProfile?.suspendedReason;
+  const identityVerification = user?.sellerProfile?.identityVerification;
+  // El motivo de rechazo lo guarda el backend en identityVerification.notes,
+  // no en sellerProfile.suspendedReason (ese campo es solo para SUSPENDED).
+  const rejectionReason = identityVerification?.notes;
+  const suspendedReason = user?.sellerProfile?.suspendedReason;
+  // Reenvío = ya existe un registro previo -> el backend permite mandar solo
+  // las fotos que cambiaron y conserva el resto (uploadOrKeep).
+  const isResubmission = Boolean(identityVerification);
 
   const [files, setFiles] = useState<Record<FileKey, File | null>>({
     dniFront: null,
@@ -50,7 +65,6 @@ export default function IdentityVerificationForm() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FileKey, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   function validateFile(file: File): string | null {
     if (!ALLOWED_IMAGE_MIMES.includes(file.type)) return "Formato no permitido (usa JPEG, PNG o WebP)";
@@ -68,26 +82,34 @@ export default function IdentityVerificationForm() {
     }
   }
 
-  const allSelected = (["dniFront", "dniBack", "selfie", "lifeProof"] as FileKey[]).every((k) => files[k]);
+  const selectedCount = FILE_KEYS.filter((k) => files[k]).length;
+  const allSelected = selectedCount === FILE_KEYS.length;
+  // Primer envío: las 4 fotos son obligatorias. Reenvío: basta con la(s)
+  // que se esté reemplazando.
+  const canSubmit = isResubmission ? selectedCount > 0 : allSelected;
   const hasErrors = Object.values(fieldErrors).some(Boolean);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!allSelected || hasErrors) return;
+    if (!canSubmit || hasErrors) return;
     setSending(true);
     setFormError(null);
     try {
-      await submitIdentityVerification({
-        dniFront: files.dniFront!,
-        dniBack: files.dniBack!,
-        selfie: files.selfie!,
-        lifeProof: files.lifeProof!,
+      const response = await submitIdentityVerification({
+        dniFront: files.dniFront ?? undefined,
+        dniBack: files.dniBack ?? undefined,
+        selfie: files.selfie ?? undefined,
+        lifeProof: files.lifeProof ?? undefined,
       });
-      setSuccess(true);
+      setFiles({ dniFront: null, dniBack: null, selfie: null, lifeProof: null });
       if (user?.sellerProfile) {
         setUser({
           ...user,
-          sellerProfile: { ...user.sellerProfile, verificationStatus: "UNDER_REVIEW" },
+          sellerProfile: {
+            ...user.sellerProfile,
+            verificationStatus: response.status,
+            identityVerification: response,
+          },
         });
       }
     } catch (err) {
@@ -112,31 +134,44 @@ export default function IdentityVerificationForm() {
         <p className="text-sm text-forest-700 bg-forest-50 border border-forest-100 rounded-stamp p-4">
           Tu identidad ya fue verificada. No necesitas hacer nada más.
         </p>
-      ) : status === "UNDER_REVIEW" || success ? (
+      ) : status === "SUSPENDED" ? (
+        <p className="text-sm text-red-900 bg-red-900/5 border border-red-900/10 rounded-stamp p-4">
+          Tu cuenta de vendedor está suspendida
+          {suspendedReason ? `: ${suspendedReason}` : "."} Contacta a soporte para más información — no
+          puedes reenviar documentación mientras la suspensión siga activa.
+        </p>
+      ) : status === "UNDER_REVIEW" ? (
         <p className="text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-stamp p-4">
           Tu documentación está en revisión. Te notificaremos cuando un administrador la evalúe.
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isResubmission && (
+            <p className="text-xs text-soil-500">
+              Ya tienes documentación enviada — solo necesitas volver a subir la(s) foto(s) que quieras
+              corregir, el resto se conserva.
+            </p>
+          )}
           {formError && (
             <div className="bg-red-50 border border-red-100 rounded-stamp p-3 text-sm text-red-700">
               {formError}
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            {(["dniFront", "dniBack", "selfie", "lifeProof"] as FileKey[]).map((key) => (
+            {FILE_KEYS.map((key) => (
               <FileField
                 key={key}
                 label={FILE_LABELS[key]}
                 file={files[key]}
                 error={fieldErrors[key]}
+                existingUrl={identityVerification?.[URL_FIELD[key]]}
                 onChange={(f) => handleFileChange(key, f)}
               />
             ))}
           </div>
           <button
             type="submit"
-            disabled={!allSelected || hasErrors || sending}
+            disabled={!canSubmit || hasErrors || sending}
             className="w-full bg-forest-700 text-stone-25 font-medium py-2.5 rounded-stamp hover:bg-forest-800 transition-colors disabled:opacity-60"
           >
             {sending ? "Enviando…" : "Enviar verificación"}
@@ -151,11 +186,13 @@ function FileField({
   label,
   file,
   error,
+  existingUrl,
   onChange,
 }: {
   label: string;
   file: File | null;
   error?: string;
+  existingUrl?: string;
   onChange: (f: File | null) => void;
 }) {
   return (
@@ -172,7 +209,17 @@ function FileField({
           className="hidden"
           onChange={(e) => onChange(e.target.files?.[0] ?? null)}
         />
-        {file ? file.name : "Subir archivo"}
+        {file ? (
+          file.name
+        ) : existingUrl ? (
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={existingUrl} alt="" className="w-6 h-6 rounded object-cover shrink-0" />
+            <span>Ya enviada — toca para reemplazar</span>
+          </div>
+        ) : (
+          "Subir archivo"
+        )}
       </div>
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </label>

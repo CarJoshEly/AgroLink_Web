@@ -148,7 +148,7 @@ export default function AdminSellerDetailPage({ params }: { params: { id: string
   return (
     <div>
       <Link
-        href="/admin/dashboard"
+        href="/admin/vendedores"
         className="inline-flex items-center gap-1.5 text-sm text-soil-500 hover:text-forest-700 mb-4"
       >
         <ArrowLeft size={14} /> Verificación de vendedores

@@ -46,7 +46,7 @@ export default function ProductForm({
   formError,
   showStatus = false,
 }: ProductFormProps) {
-  const categoriesQuery = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const categoriesQuery = useQuery({ queryKey: ["categories"], queryFn: () => fetchCategories() });
 
   const {
     register,

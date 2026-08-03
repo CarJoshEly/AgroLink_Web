@@ -33,7 +33,7 @@ export default function AdminCategoriasPage() {
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["admin-categories"],
-    queryFn: fetchCategories,
+    queryFn: () => fetchCategories(true),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
@@ -217,7 +217,7 @@ export default function AdminCategoriasPage() {
                     type="button"
                     onClick={() => setCategoryToDelete(parent)}
                     className="text-soil-400 hover:text-red-500"
-                    aria-label="Eliminar"
+                    aria-label="Desactivar"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -247,7 +247,7 @@ export default function AdminCategoriasPage() {
                           type="button"
                           onClick={() => setCategoryToDelete(child)}
                           className="text-soil-400 hover:text-red-500"
-                          aria-label="Eliminar"
+                          aria-label="Desactivar"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -263,9 +263,9 @@ export default function AdminCategoriasPage() {
 
       <ConfirmDialog
         open={categoryToDelete !== null}
-        title="Eliminar categoría"
-        message={`¿Eliminar la categoría "${categoryToDelete?.name}"?`}
-        confirmLabel="Eliminar"
+        title="Desactivar categoría"
+        message={`¿Desactivar la categoría "${categoryToDelete?.name}"? Seguirá apareciendo en esta lista marcada como "Inactiva" (no se borra), y no se podrán crear productos nuevos en ella hasta que la reactives editándola.`}
+        confirmLabel="Desactivar"
         danger
         loading={deleteMutation.isPending}
         onConfirm={() => categoryToDelete && deleteMutation.mutate(categoryToDelete.id)}

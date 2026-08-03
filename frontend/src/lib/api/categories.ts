@@ -24,8 +24,12 @@ export async function deleteCategory(id: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/categories/${id}`, { method: "DELETE" });
 }
 
-export async function fetchCategories(): Promise<Category[]> {
-  return apiFetch<Category[]>("/categories");
+/**
+ * `includeInactive` solo lo debe usar el panel admin — el catálogo público y
+ * el formulario de producto necesitan ver únicamente categorías activas.
+ */
+export async function fetchCategories(includeInactive = false): Promise<Category[]> {
+  return apiFetch<Category[]>(`/categories${includeInactive ? "?includeInactive=true" : ""}`);
 }
 
 /**

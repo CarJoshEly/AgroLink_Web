@@ -11,7 +11,7 @@ import { ApiError } from "@/lib/api/client";
 export default function ProductsCatalogPage() {
   const [filters, setFilters] = useState<ProductFiltersType>({ page: 1, limit: 12 });
 
-  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: () => fetchCategories() });
   const { data, isLoading, error } = useQuery({
     queryKey: ["products", filters],
     queryFn: () => fetchProducts(filters),

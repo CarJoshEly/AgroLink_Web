@@ -2,16 +2,27 @@
 
 import { useState } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { X, ShieldCheck, CreditCard, Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, ShieldCheck, CreditCard, Lock, AlertCircle } from "lucide-react";
+import { createPaypalOrder, capturePaypalOrder } from "@/lib/api/payments";
+import { ApiError } from "@/lib/api/client";
+import type { Order } from "@/lib/types";
 
 interface PayPalPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   totalHnl: number;
-  onPaymentSuccess: (details: any) => void;
+  onPaymentSuccess: (orders: Order[]) => void;
   isProcessing: boolean;
 }
 
+/**
+ * El monto mostrado (`totalHnl`/`totalUsd`) es solo para que el comprador
+ * vea cuánto va a pagar — el monto que de verdad se cobra lo recalcula el
+ * backend a partir del carrito (`POST /payments/paypal/orders`) y es lo
+ * único que PayPal termina usando. `createOrder`/`onApprove` llaman al
+ * backend (no `actions.order.create/capture` del lado del cliente) para que
+ * la captura quede verificada server-to-server antes de generar el pedido.
+ */
 export default function PayPalPaymentModal({
   isOpen,
   onClose,
@@ -20,13 +31,13 @@ export default function PayPalPaymentModal({
   isProcessing,
 }: PayPalPaymentModalProps) {
   const [paypalError, setPaypalError] = useState<string | null>(null);
-  const [sdkLoaded, setSdkLoaded] = useState(true);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   if (!isOpen) return null;
 
-  // Conversion approximation (1 USD = ~24.70 HNL)
   const totalUsd = (totalHnl / 24.70).toFixed(2);
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb";
+  const busy = isProcessing || isCapturing;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
@@ -75,70 +86,55 @@ export default function PayPalPaymentModal({
               </div>
             )}
 
-            {sdkLoaded ? (
-              <PayPalScriptProvider
-                options={{
-                  clientId: clientId,
-                  currency: "USD",
-                  intent: "capture",
+            <PayPalScriptProvider
+              options={{
+                clientId: clientId,
+                currency: "USD",
+                intent: "capture",
+              }}
+            >
+              <PayPalButtons
+                style={{
+                  layout: "vertical",
+                  color: "gold",
+                  shape: "rect",
+                  label: "pay",
                 }}
-              >
-                <PayPalButtons
-                  style={{
-                    layout: "vertical",
-                    color: "gold",
-                    shape: "rect",
-                    label: "pay",
-                  }}
-                  disabled={isProcessing}
-                  createOrder={(data, actions) => {
-                    return actions.order.create({
-                      intent: "CAPTURE",
-                      purchase_units: [
-                        {
-                          amount: {
-                            currency_code: "USD",
-                            value: totalUsd,
-                          },
-                          description: `Pedido AgroLink Honduras - L. ${totalHnl}`,
-                        },
-                      ],
-                    });
-                  }}
-                  onApprove={async (data, actions) => {
-                    try {
-                      if (actions.order) {
-                        const details = await actions.order.capture();
-                        onPaymentSuccess(details);
-                      }
-                    } catch (err) {
-                      onPaymentSuccess({ status: "COMPLETED", id: data.orderID });
-                    }
-                  }}
-                  onError={(err) => {
-                    console.warn("PayPal SDK Warning:", err);
-                    setSdkLoaded(false);
-                  }}
-                />
-              </PayPalScriptProvider>
-            ) : (
-              <div className="space-y-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-800">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600" />
-                  <span>Procesar Pago PayPal (Modo Seguro)</span>
-                </div>
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  Haz clic a continuación para procesar el pago con PayPal y completar la transacción en AgroLink.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => onPaymentSuccess({ status: "COMPLETED", method: "PAYPAL" })}
-                  disabled={isProcessing}
-                  className="btn-gold w-full py-3 text-xs font-bold shadow-xs"
-                >
-                  {isProcessing ? "Procesando pago PayPal..." : `Pagar con PayPal ($${totalUsd} USD)`}
-                </button>
-              </div>
+                disabled={busy}
+                createOrder={async () => {
+                  setPaypalError(null);
+                  try {
+                    const order = await createPaypalOrder();
+                    return order.paypalOrderId;
+                  } catch (err) {
+                    setPaypalError(
+                      err instanceof ApiError ? err.message : "No se pudo iniciar el pago con PayPal"
+                    );
+                    throw err;
+                  }
+                }}
+                onApprove={async (data) => {
+                  setIsCapturing(true);
+                  setPaypalError(null);
+                  try {
+                    const orders = await capturePaypalOrder(data.orderID);
+                    onPaymentSuccess(orders);
+                  } catch (err) {
+                    setPaypalError(
+                      err instanceof ApiError ? err.message : "No se pudo confirmar el pago con PayPal"
+                    );
+                  } finally {
+                    setIsCapturing(false);
+                  }
+                }}
+                onError={(err) => {
+                  console.warn("PayPal SDK Warning:", err);
+                  setPaypalError("PayPal no está disponible en este momento. Intenta de nuevo más tarde.");
+                }}
+              />
+            </PayPalScriptProvider>
+            {isCapturing && (
+              <p className="text-xs text-app-textSecondary text-center">Confirmando tu pago con PayPal…</p>
             )}
           </div>
 

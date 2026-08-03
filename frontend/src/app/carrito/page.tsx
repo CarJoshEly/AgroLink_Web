@@ -2,36 +2,39 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { ShoppingBag, CreditCard } from "lucide-react";
 import RequireRole from "@/components/auth/RequireRole";
 import CartItemRow from "@/components/cart/CartItemRow";
 import CheckoutConfirmation from "@/components/cart/CheckoutConfirmation";
 import PayPalPaymentModal from "@/components/cart/PayPalButtonModal";
-import { useCart, useCheckout } from "@/hooks/useCart";
+import { CART_QUERY_KEY, useCart } from "@/hooks/useCart";
 import { groupCartBySeller } from "@/lib/api/cart";
 import { ApiError } from "@/lib/api/client";
 import type { Order } from "@/lib/types";
 
 function CartPageContent() {
   const { data: cart, isLoading, error } = useCart();
-  const checkoutMutation = useCheckout();
+  const queryClient = useQueryClient();
 
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrders, setCreatedOrders] = useState<Order[] | null>(null);
   const [showPayPalModal, setShowPayPalModal] = useState(false);
 
   const groups = cart ? groupCartBySeller(cart.items) : [];
 
-  async function handlePaymentSuccess(details: any) {
-    setCheckoutError(null);
-    try {
-      const orders = await checkoutMutation.mutateAsync();
-      setShowPayPalModal(false);
-      setCreatedOrders(orders);
-    } catch (err) {
-      setCheckoutError(
-        err instanceof ApiError ? err.message : "No se pudo generar la solicitud de compra"
-      );
+  // El pago ya se confirmó (PayPalButtonModal capturó y generó los pedidos
+  // en el backend) — acá solo queda invalidar las queries que dependen del
+  // carrito/stock, igual que hacía `useCheckout().onSuccess`.
+  function handlePaymentSuccess(orders: Order[]) {
+    setShowPayPalModal(false);
+    setCreatedOrders(orders);
+    queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+    for (const order of orders) {
+      for (const item of order.items ?? []) {
+        queryClient.invalidateQueries({ queryKey: ["product", item.productId] });
+      }
     }
   }
 
@@ -105,7 +108,6 @@ function CartPageContent() {
             <button
               type="button"
               onClick={() => setShowPayPalModal(true)}
-              disabled={checkoutMutation.isPending}
               className="btn-gold w-full sm:w-auto px-8 py-3.5 text-sm font-bold shadow-md"
             >
               <CreditCard className="w-5 h-5" />
@@ -113,17 +115,13 @@ function CartPageContent() {
             </button>
           </div>
 
-          {checkoutError && (
-            <p className="text-sm text-status-danger mt-4 text-right font-medium">{checkoutError}</p>
-          )}
-
           {/* Modal PayPal */}
           <PayPalPaymentModal
             isOpen={showPayPalModal}
             onClose={() => setShowPayPalModal(false)}
             totalHnl={cart.total}
             onPaymentSuccess={handlePaymentSuccess}
-            isProcessing={checkoutMutation.isPending}
+            isProcessing={false}
           />
         </>
       )}

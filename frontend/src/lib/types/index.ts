@@ -283,6 +283,7 @@ export interface ProductReview {
   orderId: string;
   orderItemId: string;
   productId: string;
+  product?: Pick<Product, "id" | "name">;
   buyerId: string;
   buyer?: User;
   rating: number;
@@ -297,6 +298,7 @@ export interface SellerReview {
   id: string;
   orderId: string;
   sellerId: string;
+  seller?: Pick<SellerProfile, "id" | "businessName">;
   buyerId: string;
   buyer?: User;
   qualityScore: number;

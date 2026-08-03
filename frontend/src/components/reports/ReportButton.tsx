@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Flag, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -96,11 +97,12 @@ export default function ReportButton({ targetType, targetId, label, className = 
         {label && <span className="text-xs">{label}</span>}
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={closeModal}
-        >
+      {open &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+            onClick={closeModal}
+          >
           <div
             className="bg-white rounded-stamp shadow-xl w-full max-w-sm p-5"
             onClick={(e) => e.stopPropagation()}
@@ -166,8 +168,9 @@ export default function ReportButton({ targetType, targetId, label, className = 
               </form>
             )}
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </>
   );
 }

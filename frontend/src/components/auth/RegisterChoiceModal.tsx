@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { X, ShoppingBag, Store, ArrowRight, Sprout } from "lucide-react";
 
@@ -11,9 +12,19 @@ interface RegisterChoiceModalProps {
 export default function RegisterChoiceModal({ isOpen, onClose }: RegisterChoiceModalProps) {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-app-border overflow-hidden animate-slideDown">
+  // Portal a document.body: el navbar tiene `backdrop-blur` (backdrop-filter),
+  // que en Chromium crea un containing block para descendientes `fixed` —
+  // sin el portal, este overlay queda encerrado en la caja del <header>
+  // (~64px) en vez de cubrir la pantalla completa.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-app-border overflow-hidden animate-slideDown"
+      >
         {/* Header */}
         <div className="bg-primary text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -88,6 +99,7 @@ export default function RegisterChoiceModal({ isOpen, onClose }: RegisterChoiceM
           </Link>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

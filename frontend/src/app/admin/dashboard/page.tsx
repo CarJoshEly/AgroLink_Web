@@ -79,9 +79,9 @@ export default function AdminDashboardPage() {
         <MetricCard title="Comisión cobrada" value={formatCurrency(data.finance.totalCommissionCollected)} />
         <MetricCard title="Reportes" value={data.reports.total} />
         <MetricCard
-          title="Reseñas pendientes"
-          value={data.reviews.pendingProductReviews + data.reviews.pendingSellerReviews}
-          subtitle={`${data.reviews.pendingProductReviews} producto · ${data.reviews.pendingSellerReviews} vendedor`}
+          title="Reseñas"
+          value={data.reviews.totalProductReviews + data.reviews.totalSellerReviews}
+          subtitle={`${data.reviews.totalProductReviews} producto · ${data.reviews.totalSellerReviews} vendedor`}
         />
       </div>
 

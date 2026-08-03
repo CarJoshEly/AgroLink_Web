@@ -13,6 +13,7 @@ import {
 } from "@/lib/api/categories";
 import { ApiError } from "@/lib/api/client";
 import type { Category } from "@/lib/types";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface FormState {
   id: string | null;
@@ -28,6 +29,7 @@ export default function AdminCategoriasPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["admin-categories"],
@@ -41,7 +43,13 @@ export default function AdminCategoriasPage() {
     mutationFn: ({ id, input }: { id: string; input: CreateCategoryInput }) => updateCategory(id, input),
     onSuccess: invalidate,
   });
-  const deleteMutation = useMutation({ mutationFn: deleteCategory, onSuccess: invalidate });
+  const deleteMutation = useMutation({
+    mutationFn: deleteCategory,
+    onSuccess: () => {
+      invalidate();
+      setCategoryToDelete(null);
+    },
+  });
 
   const tree = buildCategoryTree(categories ?? []);
 
@@ -84,10 +92,6 @@ export default function AdminCategoriasPage() {
     }
   }
 
-  function handleDelete(category: Category) {
-    if (!confirm(`¿Eliminar la categoría "${category.name}"?`)) return;
-    deleteMutation.mutate(category.id);
-  }
 
   const submitting = createMutation.isPending || updateMutation.isPending;
 
@@ -211,7 +215,7 @@ export default function AdminCategoriasPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(parent)}
+                    onClick={() => setCategoryToDelete(parent)}
                     className="text-soil-400 hover:text-red-500"
                     aria-label="Eliminar"
                   >
@@ -241,7 +245,7 @@ export default function AdminCategoriasPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(child)}
+                          onClick={() => setCategoryToDelete(child)}
                           className="text-soil-400 hover:text-red-500"
                           aria-label="Eliminar"
                         >
@@ -256,6 +260,17 @@ export default function AdminCategoriasPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={categoryToDelete !== null}
+        title="Eliminar categoría"
+        message={`¿Eliminar la categoría "${categoryToDelete?.name}"?`}
+        confirmLabel="Eliminar"
+        danger
+        loading={deleteMutation.isPending}
+        onConfirm={() => categoryToDelete && deleteMutation.mutate(categoryToDelete.id)}
+        onCancel={() => setCategoryToDelete(null)}
+      />
     </div>
   );
 }

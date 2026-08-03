@@ -45,9 +45,18 @@ export function useCheckout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => cartApi.checkoutCart(),
-    onSuccess: () => {
+    onSuccess: (orders) => {
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      // El checkout descuenta stock de inmediato (ver orders.service.ts) —
+      // sin esto, el catálogo y la ficha de producto muestran existencias
+      // desactualizadas hasta que el comprador refresque a mano.
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      for (const order of orders) {
+        for (const item of order.items ?? []) {
+          queryClient.invalidateQueries({ queryKey: ["product", item.productId] });
+        }
+      }
     },
   });
 }

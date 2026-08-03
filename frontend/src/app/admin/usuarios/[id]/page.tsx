@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,10 +8,12 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { fetchUserById, activateUser, deactivateUser, deleteUser } from "@/lib/api/users";
 import { ApiError } from "@/lib/api/client";
 import { USER_ROLE_LABELS, VERIFICATION_STATUS_LABELS } from "@/lib/labels";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 export default function AdminUsuarioDetallePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", params.id],
@@ -28,14 +31,6 @@ export default function AdminUsuarioDetallePage({ params }: { params: { id: stri
     mutationFn: () => deleteUser(params.id),
     onSuccess: () => router.push("/admin/usuarios"),
   });
-
-  function handleDelete() {
-    if (!user) return;
-    const confirmed = confirm(
-      `¿Eliminar la cuenta de "${user.name}"? Esta acción es irreversible desde esta pantalla.`
-    );
-    if (confirmed) remove.mutate();
-  }
 
   if (isLoading || !user) {
     return (
@@ -95,13 +90,24 @@ export default function AdminUsuarioDetallePage({ params }: { params: { id: stri
         )}
         <button
           type="button"
-          onClick={handleDelete}
+          onClick={() => setDeleteDialogOpen(true)}
           disabled={remove.isPending}
           className="text-sm px-3 py-1.5 rounded-stamp border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50"
         >
           Eliminar cuenta
         </button>
       </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Eliminar cuenta"
+        message={`¿Eliminar la cuenta de "${user.name}"? Esta acción es irreversible desde esta pantalla.`}
+        confirmLabel="Eliminar"
+        danger
+        loading={remove.isPending}
+        onConfirm={() => remove.mutate()}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
 
       {user.sellerProfile && (
         <div className="border border-forest-100 rounded-stamp p-4 mb-6">

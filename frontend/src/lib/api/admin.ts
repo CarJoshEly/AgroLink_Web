@@ -76,7 +76,7 @@ export interface AdminDashboard {
     byStatus: Record<OrderStatus, number>;
     totalDeliveredRevenue: number;
   };
-  reviews: { pendingProductReviews: number; pendingSellerReviews: number };
+  reviews: { totalProductReviews: number; totalSellerReviews: number };
   reports: { total: number; byStatus: Record<ReportStatus, number> };
   finance: {
     totalVolume: number;

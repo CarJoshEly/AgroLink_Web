@@ -25,13 +25,6 @@ function AcceptButton({ order }: { order: Order }) {
     mutationFn: () => acceptOrder(order.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["received-orders"] });
-      // Aceptar descuenta stock en el backend (ver comentario en
-      // lib/api/orders.ts) — sin esto, "Mis productos"/inventario se queda
-      // con el stock viejo en caché hasta que expire por su cuenta.
-      queryClient.invalidateQueries({ queryKey: ["my-products"] });
-      for (const item of order.items ?? []) {
-        queryClient.invalidateQueries({ queryKey: ["product", item.productId] });
-      }
     },
   });
 

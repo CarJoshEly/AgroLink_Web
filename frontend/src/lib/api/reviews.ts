@@ -115,24 +115,29 @@ export async function deleteSellerReview(id: string): Promise<{ message: string 
 // Moderación (admin)
 // --------------------------------------------------------------------------
 
-/** GET /reviews/products/pending — cola de moderación de reseñas de producto. */
-export async function fetchPendingProductReviews(
+/**
+ * GET /reviews/products/moderation — todas las reseñas de producto, más
+ * recientes primero. Las reseñas se publican solas al crearse; esto es
+ * post-moderación (retirar una que incumpla las normas), no una cola de
+ * aprobación previa.
+ */
+export async function fetchProductReviewsForAdmin(
   page = 1,
   limit = 10
 ): Promise<{ reviews: ProductReview[]; meta: PaginationMeta | undefined }> {
   const { data, meta } = await apiFetchPaginated<ProductReview[]>(
-    `/reviews/products/pending?page=${page}&limit=${limit}`
+    `/reviews/products/moderation?page=${page}&limit=${limit}`
   );
   return { reviews: data, meta };
 }
 
-/** GET /reviews/sellers/pending — cola de moderación de reseñas de vendedor. */
-export async function fetchPendingSellerReviews(
+/** GET /reviews/sellers/moderation — todas las reseñas de vendedor, más recientes primero. */
+export async function fetchSellerReviewsForAdmin(
   page = 1,
   limit = 10
 ): Promise<{ reviews: SellerReview[]; meta: PaginationMeta | undefined }> {
   const { data, meta } = await apiFetchPaginated<SellerReview[]>(
-    `/reviews/sellers/pending?page=${page}&limit=${limit}`
+    `/reviews/sellers/moderation?page=${page}&limit=${limit}`
   );
   return { reviews: data, meta };
 }

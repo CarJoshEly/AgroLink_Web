@@ -115,10 +115,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     queryClient.invalidateQueries({ queryKey: ["received-orders"] });
   }
 
-  // Aceptar (a diferencia de rechazar/preparar/entregar/cancelar) descuenta
-  // stock en el backend — sin invalidar estas dos, "Mis productos" e
-  // inventario se quedan con el stock viejo en caché.
-  function refreshAfterAccept() {
+  // El stock se descuenta en el checkout (comprador), no al aceptar — pero
+  // rechazar o cancelar en cualquier etapa SÍ lo restaura (ver
+  // orders.service.ts: reject/cancelMine/cancel). Sin invalidar estas dos,
+  // "Mis productos" e inventario se quedan con el stock viejo en caché.
+  function refreshWithStock() {
     refresh();
     queryClient.invalidateQueries({ queryKey: ["my-products"] });
     for (const item of order?.items ?? []) {
@@ -129,7 +130,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   const acceptMutation = useMutation({
     mutationFn: () => acceptOrder(params.id),
-    onSuccess: refreshAfterAccept,
+    onSuccess: refresh,
   });
   const prepareMutation = useMutation({
     mutationFn: () => prepareOrder(params.id),
@@ -219,7 +220,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               label="Rechazar"
               confirmLabel="Confirmar rechazo"
               variant="danger"
-              action={(reason) => rejectOrder(params.id, reason).then(refresh)}
+              action={(reason) => rejectOrder(params.id, reason).then(refreshWithStock)}
             />
           </>
         )}
@@ -237,7 +238,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               label="Cancelar pedido"
               confirmLabel="Confirmar cancelación"
               variant="danger"
-              action={(reason) => cancelOrder(params.id, reason).then(refresh)}
+              action={(reason) => cancelOrder(params.id, reason).then(refreshWithStock)}
             />
           </>
         )}
@@ -255,7 +256,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               label="Cancelar pedido"
               confirmLabel="Confirmar cancelación"
               variant="danger"
-              action={(reason) => cancelOrder(params.id, reason).then(refresh)}
+              action={(reason) => cancelOrder(params.id, reason).then(refreshWithStock)}
             />
           </>
         )}

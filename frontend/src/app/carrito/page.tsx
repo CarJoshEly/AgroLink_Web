@@ -8,6 +8,7 @@ import RequireRole from "@/components/auth/RequireRole";
 import CartItemRow from "@/components/cart/CartItemRow";
 import CheckoutConfirmation from "@/components/cart/CheckoutConfirmation";
 import PayPalPaymentModal from "@/components/cart/PayPalButtonModal";
+import VerificationBadge from "@/components/ui/VerificationBadge";
 import { CART_QUERY_KEY, useCart } from "@/hooks/useCart";
 import { groupCartBySeller } from "@/lib/api/cart";
 import { ApiError } from "@/lib/api/client";
@@ -84,9 +85,12 @@ function CartPageContent() {
           <div className="space-y-8">
             {groups.map((group) => (
               <div key={group.seller.id}>
-                <p className="text-xs uppercase tracking-wider text-secondary-dark font-bold mb-2">
-                  {group.seller.businessName}
-                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs uppercase tracking-wider text-secondary-dark font-bold">
+                    {group.seller.businessName}
+                  </p>
+                  <VerificationBadge verified={group.seller.verificationStatus === "VERIFIED"} />
+                </div>
                 <div className="border border-app-border rounded-2xl bg-white px-4 shadow-xs">
                   {group.items.map((item) => (
                     <CartItemRow key={item.id} item={item} />

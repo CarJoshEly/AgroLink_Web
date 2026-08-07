@@ -6,8 +6,7 @@ import Link from "next/link";
 import { resetPassword } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import PasswordInput from "@/components/ui/PasswordInput";
-
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
+import { PASSWORD_MIN_LENGTH, validatePassword } from "@/lib/validation/password";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -28,8 +27,12 @@ function ResetPasswordContent() {
       setError("El enlace no incluye un token válido.");
       return;
     }
-    if (password.length < 8 || !PASSWORD_REGEX.test(password)) {
-      setError("La contraseña debe tener mínimo 8 caracteres, con al menos una letra y un número.");
+    // Sin nombre/correo del usuario acá (solo hay un token) — el backend sí
+    // los conoce (encuentra al usuario por el token) y hace esa parte del
+    // chequeo del lado del servidor de todas formas.
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (password !== confirm) {
@@ -87,6 +90,9 @@ function ResetPasswordContent() {
             onChange={(e) => setPassword(e.target.value)}
             className="input mt-1"
           />
+          <p className="text-xs text-soil-400 mt-1">
+            Mínimo {PASSWORD_MIN_LENGTH} caracteres, con mayúsculas, minúsculas, números y un símbolo.
+          </p>
         </label>
         <label className="block">
           <span className="text-sm font-medium text-forest-800">Confirmar contraseña</span>

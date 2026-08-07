@@ -11,20 +11,31 @@ import { ApiError } from "@/lib/api/client";
 import PasswordInput from "@/components/ui/PasswordInput";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  PASSWORD_MIN_LENGTH,
+  STRONG_PASSWORD_MESSAGE,
+  STRONG_PASSWORD_REGEX,
+  getPasswordContextError,
+} from "@/lib/validation/password";
 
-// Replica exacta de la regex del backend: mínimo 8 caracteres, al menos una
-// letra y al menos un número.
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
-
-const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres").max(100, "Máximo 100 caracteres"),
-  email: z.string().email("Correo inválido"),
-  phone: z.string().optional().or(z.literal("")),
-  password: z
-    .string()
-    .min(8, "Mínimo 8 caracteres")
-    .regex(PASSWORD_REGEX, "Debe incluir al menos una letra y un número"),
-});
+const schema = z
+  .object({
+    name: z.string().min(2, "Mínimo 2 caracteres").max(100, "Máximo 100 caracteres"),
+    email: z.string().email("Correo inválido"),
+    phone: z.string().optional().or(z.literal("")),
+    password: z
+      .string()
+      .min(PASSWORD_MIN_LENGTH, STRONG_PASSWORD_MESSAGE)
+      .regex(STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE),
+  })
+  .superRefine((values, ctx) => {
+    // No puede ir dentro de un solo campo `.regex()` — necesita comparar la
+    // contraseña contra OTROS campos del mismo formulario (nombre, correo).
+    const contextError = getPasswordContextError(values.password, [values.name, values.email]);
+    if (contextError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["password"], message: contextError });
+    }
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -118,6 +129,11 @@ export default function RegisterBuyerForm() {
         </Field>
         <Field label="Contraseña" required error={errors.password?.message}>
           <PasswordInput {...register("password")} className="input" />
+          {!errors.password && (
+            <p className="text-xs text-soil-400 mt-1">
+              Mínimo {PASSWORD_MIN_LENGTH} caracteres, con mayúsculas, minúsculas, números y un símbolo.
+            </p>
+          )}
         </Field>
 
         <button

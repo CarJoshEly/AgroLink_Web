@@ -11,27 +11,43 @@ import { ApiError } from "@/lib/api/client";
 import PasswordInput from "@/components/ui/PasswordInput";
 import LocationMapPicker from "./LocationMapPicker";
 import type { Department, Municipality } from "@/lib/types";
+import {
+  PASSWORD_MIN_LENGTH,
+  STRONG_PASSWORD_MESSAGE,
+  STRONG_PASSWORD_REGEX,
+  getPasswordContextError,
+} from "@/lib/validation/password";
 
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 // Formato hondureño: XXXX-XXXX-XXXXX
 const DNI_REGEX = /^\d{4}-\d{4}-\d{5}$/;
 
-const schema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres").max(100, "Máximo 100 caracteres"),
-  email: z.string().email("Correo inválido"),
-  phone: z.string().min(1, "El teléfono es obligatorio para vendedores"),
-  password: z
-    .string()
-    .min(8, "Mínimo 8 caracteres")
-    .regex(PASSWORD_REGEX, "Debe incluir al menos una letra y un número"),
-  businessName: z.string().min(2, "Mínimo 2 caracteres").max(150, "Máximo 150 caracteres"),
-  dni: z.string().regex(DNI_REGEX, "Formato esperado: 0801-1990-12345"),
-  departmentId: z.string().min(1, "Selecciona un departamento"),
-  municipalityId: z.string().min(1, "Selecciona un municipio"),
-  address: z.string().min(5, "Mínimo 5 caracteres"),
-  latitude: z.coerce.number({ message: "Ingresa un número válido" }).min(-90).max(90),
-  longitude: z.coerce.number({ message: "Ingresa un número válido" }).min(-180).max(180),
-});
+const schema = z
+  .object({
+    name: z.string().min(2, "Mínimo 2 caracteres").max(100, "Máximo 100 caracteres"),
+    email: z.string().email("Correo inválido"),
+    phone: z.string().min(1, "El teléfono es obligatorio para vendedores"),
+    password: z
+      .string()
+      .min(PASSWORD_MIN_LENGTH, STRONG_PASSWORD_MESSAGE)
+      .regex(STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE),
+    businessName: z.string().min(2, "Mínimo 2 caracteres").max(150, "Máximo 150 caracteres"),
+    dni: z.string().regex(DNI_REGEX, "Formato esperado: 0801-1990-12345"),
+    departmentId: z.string().min(1, "Selecciona un departamento"),
+    municipalityId: z.string().min(1, "Selecciona un municipio"),
+    address: z.string().min(5, "Mínimo 5 caracteres"),
+    latitude: z.coerce.number({ message: "Ingresa un número válido" }).min(-90).max(90),
+    longitude: z.coerce.number({ message: "Ingresa un número válido" }).min(-180).max(180),
+  })
+  .superRefine((values, ctx) => {
+    const contextError = getPasswordContextError(values.password, [
+      values.name,
+      values.email,
+      values.businessName,
+    ]);
+    if (contextError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["password"], message: contextError });
+    }
+  });
 
 // z.coerce.number() tiene tipo de entrada distinto al de salida (unknown -> number),
 // así que el formulario debe tiparse con la entrada "cruda" y el resolver transformarla
@@ -139,6 +155,11 @@ export default function RegisterSellerForm() {
       </Field>
       <Field label="Contraseña" required error={errors.password?.message}>
         <PasswordInput {...register("password")} className="input" />
+        {!errors.password && (
+          <p className="text-xs text-soil-400 mt-1">
+            Mínimo {PASSWORD_MIN_LENGTH} caracteres, con mayúsculas, minúsculas, números y un símbolo.
+          </p>
+        )}
       </Field>
 
       <Field label="Nombre del negocio / finca" required error={errors.businessName?.message}>

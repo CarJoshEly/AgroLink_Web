@@ -4,10 +4,11 @@ import { useState } from "react";
 import { changePassword } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import PasswordInput from "@/components/ui/PasswordInput";
-
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).+$/;
+import { useAuth } from "@/hooks/useAuth";
+import { PASSWORD_MIN_LENGTH, validatePassword } from "@/lib/validation/password";
 
 export default function ChangePasswordForm() {
+  const { user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +20,9 @@ export default function ChangePasswordForm() {
     setError(null);
     setSuccess(false);
 
-    if (newPassword.length < 8 || !PASSWORD_REGEX.test(newPassword)) {
-      setError("La nueva contraseña debe tener mínimo 8 caracteres, con al menos una letra y un número.");
+    const passwordError = validatePassword(newPassword, [user?.name, user?.email]);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -56,6 +58,9 @@ export default function ChangePasswordForm() {
           onChange={(e) => setNewPassword(e.target.value)}
           className="input mt-1"
         />
+        <p className="text-xs text-soil-400 mt-1">
+          Mínimo {PASSWORD_MIN_LENGTH} caracteres, con mayúsculas, minúsculas, números y un símbolo.
+        </p>
       </label>
       {error && <p className="text-xs text-red-600">{error}</p>}
       {success && <p className="text-xs text-forest-700">Contraseña actualizada correctamente.</p>}

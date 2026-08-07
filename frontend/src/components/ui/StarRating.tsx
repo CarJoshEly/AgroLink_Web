@@ -31,7 +31,7 @@ export default function StarRating({
           <Star
             size={size}
             strokeWidth={1.5}
-            className={star <= value ? "fill-maize-500 text-maize-600" : "text-forest-100"}
+            className={star <= value ? "fill-maize-500 text-maize-600" : "text-forest-600"}
           />
         </button>
       ))}

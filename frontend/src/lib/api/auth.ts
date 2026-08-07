@@ -80,6 +80,19 @@ export async function login(input: LoginInput): Promise<{ user: User } & AuthTok
   });
 }
 
+/**
+ * "Continuar con Google" — el backend hace login-o-registro en un solo paso:
+ * si el correo de la cuenta de Google ya existe lo vincula/inicia sesión, si
+ * no existe crea una cuenta de COMPRADOR nueva (los vendedores no se pueden
+ * crear por esta vía, necesitan el formulario completo con documentos).
+ */
+export async function googleAuth(idToken: string): Promise<{ user: User } & AuthTokens> {
+  return apiFetch<{ user: User } & AuthTokens>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  });
+}
+
 export async function refresh(refreshToken: string): Promise<AuthTokens> {
   return apiFetch<AuthTokens>("/auth/refresh", {
     method: "POST",

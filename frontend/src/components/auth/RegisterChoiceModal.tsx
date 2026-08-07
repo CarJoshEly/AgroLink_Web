@@ -1,8 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { X, ShoppingBag, Store, ArrowRight, Sprout } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api/client";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 interface RegisterChoiceModalProps {
   isOpen: boolean;
@@ -10,7 +15,31 @@ interface RegisterChoiceModalProps {
 }
 
 export default function RegisterChoiceModal({ isOpen, onClose }: RegisterChoiceModalProps) {
+  const router = useRouter();
+  const { loginWithGoogle } = useAuth();
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
   if (!isOpen) return null;
+
+  // Google solo crea/inicia sesión de cuentas de COMPRADOR (ver
+  // AuthService.googleAuth en el backend) — por eso vive junto a las dos
+  // opciones de registro, como un tercer atajo, y no dentro de la opción
+  // "Vendedor".
+  async function handleGoogleIdToken(idToken: string) {
+    setGoogleError(null);
+    setIsGoogleLoading(true);
+    try {
+      await loginWithGoogle(idToken);
+      onClose();
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      setGoogleError(err instanceof ApiError ? err.message : "No se pudo continuar con Google.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
 
   // Portal a document.body: el navbar tiene `backdrop-blur` (backdrop-filter),
   // que en Chromium crea un containing block para descendientes `fixed` —
@@ -97,6 +126,24 @@ export default function RegisterChoiceModal({ isOpen, onClose }: RegisterChoiceM
               <ArrowRight className="w-4 h-4 text-app-textDisabled group-hover:text-secondary-dark group-hover:translate-x-1 transition-all shrink-0 mt-1" />
             </div>
           </Link>
+
+          {/* Atajo: continuar con Google (siempre crea/entra como comprador) */}
+          <div className="relative pt-1">
+            <div className="absolute inset-0 flex items-center px-1">
+              <div className="w-full border-t border-app-border" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-2 text-app-textSecondary">o regístrate como comprador con</span>
+            </div>
+          </div>
+
+          {googleError && (
+            <p className="text-xs text-status-danger text-center -mt-1">{googleError}</p>
+          )}
+          <GoogleSignInButton onIdToken={handleGoogleIdToken} text="signup_with" />
+          {isGoogleLoading && (
+            <p className="text-xs text-app-textSecondary text-center -mt-1">Conectando con Google…</p>
+          )}
         </div>
       </div>
     </div>,

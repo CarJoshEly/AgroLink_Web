@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { registerBuyer } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import PasswordInput from "@/components/ui/PasswordInput";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { useAuth } from "@/hooks/useAuth";
 
 // Replica exacta de la regex del backend: mínimo 8 caracteres, al menos una
 // letra y al menos un número.
@@ -26,9 +29,12 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function RegisterBuyerForm() {
+  const router = useRouter();
+  const { loginWithGoogle } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [devVerificationLink, setDevVerificationLink] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const {
     register,
@@ -52,6 +58,20 @@ export default function RegisterBuyerForm() {
     }
   }
 
+  async function onGoogleIdToken(idToken: string) {
+    setFormError(null);
+    setIsGoogleLoading(true);
+    try {
+      await loginWithGoogle(idToken);
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "No se pudo continuar con Google.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
+
   if (done) {
     return (
       <div className="bg-forest-50 border border-forest-100 rounded-stamp p-5 text-forest-700 text-sm space-y-3">
@@ -69,32 +89,46 @@ export default function RegisterBuyerForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="space-y-4">
       {formError && (
         <div className="bg-red-50 border border-red-100 rounded-stamp p-3 text-sm text-red-700">{formError}</div>
       )}
 
-      <Field label="Nombre completo" required error={errors.name?.message}>
-        <input {...register("name")} className="input" />
-      </Field>
-      <Field label="Correo electrónico" required error={errors.email?.message}>
-        <input type="email" {...register("email")} className="input" />
-      </Field>
-      <Field label="Teléfono" error={errors.phone?.message}>
-        <input {...register("phone")} className="input" />
-      </Field>
-      <Field label="Contraseña" required error={errors.password?.message}>
-        <PasswordInput {...register("password")} className="input" />
-      </Field>
+      <GoogleSignInButton onIdToken={onGoogleIdToken} text="signup_with" />
+      {isGoogleLoading && <p className="text-xs text-soil-500 text-center">Conectando con Google…</p>}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-forest-700 text-stone-25 font-medium py-2.5 rounded-stamp hover:bg-forest-800 transition-colors disabled:opacity-60"
-      >
-        {isSubmitting ? "Creando cuenta…" : "Crear cuenta"}
-      </button>
-    </form>
+      <div className="relative py-1">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-soil-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-2 text-soil-400">o completa el formulario</span>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Field label="Nombre completo" required error={errors.name?.message}>
+          <input {...register("name")} className="input" />
+        </Field>
+        <Field label="Correo electrónico" required error={errors.email?.message}>
+          <input type="email" {...register("email")} className="input" />
+        </Field>
+        <Field label="Teléfono" error={errors.phone?.message}>
+          <input {...register("phone")} className="input" />
+        </Field>
+        <Field label="Contraseña" required error={errors.password?.message}>
+          <PasswordInput {...register("password")} className="input" />
+        </Field>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-forest-700 text-stone-25 font-medium py-2.5 rounded-stamp hover:bg-forest-800 transition-colors disabled:opacity-60"
+        >
+          {isSubmitting ? "Creando cuenta…" : "Crear cuenta"}
+        </button>
+      </form>
+    </div>
   );
 }
 

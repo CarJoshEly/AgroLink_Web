@@ -9,6 +9,8 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api/client";
 import PasswordInput from "@/components/ui/PasswordInput";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import type { User } from "@/lib/types";
 
 const schema = z.object({
   email: z.string().email("Correo inválido"),
@@ -23,8 +25,9 @@ export default function LoginForm() {
   // manda `?redirect=<ruta original>` para volver ahí tras iniciar sesión.
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const {
     register,
@@ -32,20 +35,24 @@ export default function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
+  function goToDestination(user: User) {
+    if (redirect) {
+      router.push(redirect);
+    } else if (user.role === "ADMIN") {
+      router.push("/admin/dashboard");
+    } else if (user.role === "SELLER") {
+      router.push(user.sellerProfile ? "/vendedor/dashboard" : "/");
+    } else {
+      router.push("/");
+    }
+    router.refresh();
+  }
+
   async function onSubmit(values: FormValues) {
     setFormError(null);
     try {
       const user = await login(values.email, values.password);
-      if (redirect) {
-        router.push(redirect);
-      } else if (user.role === "ADMIN") {
-        router.push("/admin/dashboard");
-      } else if (user.role === "SELLER") {
-        router.push(user.sellerProfile ? "/vendedor/dashboard" : "/");
-      } else {
-        router.push("/");
-      }
-      router.refresh();
+      goToDestination(user);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 429) {
@@ -58,6 +65,19 @@ export default function LoginForm() {
       } else {
         setFormError("Ocurrió un error inesperado. Intenta de nuevo.");
       }
+    }
+  }
+
+  async function onGoogleIdToken(idToken: string) {
+    setFormError(null);
+    setIsGoogleLoading(true);
+    try {
+      const user = await loginWithGoogle(idToken);
+      goToDestination(user);
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "No se pudo iniciar sesión con Google.");
+    } finally {
+      setIsGoogleLoading(false);
     }
   }
 
@@ -92,6 +112,18 @@ export default function LoginForm() {
       >
         {isSubmitting ? "Ingresando…" : "Ingresar"}
       </button>
+
+      <div className="relative py-1">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-soil-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-2 text-soil-400">o</span>
+        </div>
+      </div>
+
+      <GoogleSignInButton onIdToken={onGoogleIdToken} text="signin_with" />
+      {isGoogleLoading && <p className="text-xs text-soil-500 text-center">Iniciando sesión con Google…</p>}
     </form>
   );
 }

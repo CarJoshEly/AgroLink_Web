@@ -46,6 +46,9 @@ export type NotificationType =
   | "REPORT_RECEIVED"
   | "PAYMENT_UPDATE";
 
+/** A qué entidad navegar al tocar una notificación — ver `getNotificationHref`. */
+export type NotificationTargetType = "ORDER" | "PRODUCT" | "SELLER" | "REPORT";
+
 export type PaymentProvider = "PAYPAL" | "CREDIT_CARD" | "DEBIT_CARD" | "OTHER";
 
 export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
@@ -341,6 +344,9 @@ export interface Notification {
   message: string;
   isRead: boolean;
   createdAt: string;
+  /** `null` en notificaciones sin destino navegable (p. ej. SELLER_APPROVED). */
+  targetType: NotificationTargetType | null;
+  targetId: string | null;
 }
 
 // --------------------------------------------------------------------------

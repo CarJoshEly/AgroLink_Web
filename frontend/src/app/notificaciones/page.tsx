@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import type { NotificationType } from "@/lib/types";
+import type { Notification, NotificationType } from "@/lib/types";
 import { NOTIFICATION_TYPE_LABELS } from "@/lib/labels";
 import { NOTIFICATION_ICONS } from "@/components/layout/NotificationBell";
+import { getNotificationHref } from "@/lib/notifications/getNotificationHref";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useNotifications,
   useMarkAllNotificationsAsRead,
@@ -29,6 +32,8 @@ function formatDate(dateIso: string) {
 }
 
 export default function NotificacionesPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
   const [page, setPage] = useState(1);
   const isRead = filter === "all" ? undefined : filter === "read";
@@ -40,6 +45,12 @@ export default function NotificacionesPage() {
 
   const notifications = data?.notifications ?? [];
   const meta = data?.meta;
+
+  function handleClick(n: Notification) {
+    if (!n.isRead) markAsRead.mutate(n.id);
+    const href = getNotificationHref(n, user?.role);
+    if (href) router.push(href);
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -88,11 +99,7 @@ export default function NotificacionesPage() {
                 className={`flex items-start gap-3 px-4 py-4 ${n.isRead ? "bg-white" : "bg-forest-50"}`}
               >
                 {Icon && <Icon className="w-5 h-5 mt-0.5 text-forest-600 shrink-0" />}
-                <button
-                  type="button"
-                  onClick={() => !n.isRead && markAsRead.mutate(n.id)}
-                  className="flex-1 text-left"
-                >
+                <button type="button" onClick={() => handleClick(n)} className="flex-1 text-left">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-forest-800 text-sm">{n.title}</p>
                     <span className="text-[11px] text-soil-400 uppercase tracking-wide">

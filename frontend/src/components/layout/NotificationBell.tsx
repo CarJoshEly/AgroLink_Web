@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   ShoppingBag,
@@ -19,6 +20,8 @@ import {
 } from "lucide-react";
 import type { Notification, NotificationType } from "@/lib/types";
 import { NOTIFICATION_TYPE_LABELS } from "@/lib/labels";
+import { getNotificationHref } from "@/lib/notifications/getNotificationHref";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useUnreadNotificationsCount,
   useNotifications,
@@ -53,10 +56,28 @@ function timeAgo(dateIso: string): string {
   return `hace ${days} d`;
 }
 
-function NotificationRow({ notification }: { notification: Notification }) {
+function NotificationRow({
+  notification,
+  onNavigate,
+}: {
+  notification: Notification;
+  /** Se llama justo antes de navegar (cierra el dropdown). */
+  onNavigate: () => void;
+}) {
+  const router = useRouter();
+  const { user } = useAuth();
   const markAsRead = useMarkNotificationAsRead();
   const deleteNotification = useDeleteNotification();
   const Icon = NOTIFICATION_ICONS[notification.type] ?? Bell;
+  const href = getNotificationHref(notification, user?.role);
+
+  function handleClick() {
+    if (!notification.isRead) markAsRead.mutate(notification.id);
+    if (href) {
+      onNavigate();
+      router.push(href);
+    }
+  }
 
   return (
     <div
@@ -65,11 +86,7 @@ function NotificationRow({ notification }: { notification: Notification }) {
       }`}
     >
       <Icon className="w-4 h-4 mt-0.5 text-forest-600 shrink-0" />
-      <button
-        type="button"
-        onClick={() => !notification.isRead && markAsRead.mutate(notification.id)}
-        className="flex-1 text-left"
-      >
+      <button type="button" onClick={handleClick} className="flex-1 text-left">
         <p className="font-medium text-forest-800">{notification.title}</p>
         <p className="text-soil-500 text-xs mt-0.5">{notification.message}</p>
         <p className="text-soil-400 text-[11px] mt-1">{timeAgo(notification.createdAt)}</p>
@@ -133,7 +150,9 @@ export default function NotificationBell() {
                   No tienes notificaciones todavía.
                 </p>
               ) : (
-                data.notifications.map((n) => <NotificationRow key={n.id} notification={n} />)
+                data.notifications.map((n) => (
+                  <NotificationRow key={n.id} notification={n} onNavigate={() => setOpen(false)} />
+                ))
               )}
             </div>
 
